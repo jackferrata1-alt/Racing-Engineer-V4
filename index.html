@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Racing Engineer V4</title>
+    <title>Racing Engineer V4.2</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -11,8 +11,8 @@
 
 <header>
     <div>
-        <h1>RACING ENGINEER <span>V4</span></h1>
-        <p>Push Lap Engineer</p>
+        <h1>RACING ENGINEER <span>V4.2</span></h1>
+        <p>Custom Push-Lap Engineer</p>
     </div>
 
     <div id="status" class="status">READY</div>
@@ -20,10 +20,12 @@
 
 <main>
 
-    <section class="controls panel">
+    <!-- TRACK + TARGET -->
+    <section class="panel controls">
 
         <div class="control">
             <label>TRACK</label>
+
             <select id="trackSelect">
                 <option value="spa">Spa-Francorchamps</option>
                 <option value="bahrain">Bahrain</option>
@@ -47,7 +49,7 @@
                 <option value="brazil">Brazil</option>
                 <option value="lasvegas">Las Vegas</option>
                 <option value="qatar">Qatar</option>
-                <option value="abuDhabi">Abu Dhabi</option>
+                <option value="abudhabi">Abu Dhabi</option>
             </select>
         </div>
 
@@ -66,6 +68,7 @@
     </section>
 
 
+    <!-- DASHBOARD -->
     <section class="dashboard">
 
         <div class="metric panel">
@@ -75,7 +78,7 @@
 
         <div class="metric panel">
             <span>TARGET DELTA</span>
-            <strong id="delta">+0.000</strong>
+            <strong id="delta">+0:00.000</strong>
         </div>
 
         <div class="metric panel">
@@ -86,31 +89,31 @@
     </section>
 
 
-    <section class="engineer panel">
+    <!-- ENGINEER -->
+    <section class="panel engineer">
 
         <div class="engineerHeader">
             <span>ENGINEER</span>
             <span id="cornerCounter">READY</span>
         </div>
 
-        <div id="call">
-            PUSH LAP READY
-        </div>
+        <div id="call">PUSH LAP READY</div>
 
         <div id="subCall">
-            Select your track and target time.
+            Configure your notes below.
         </div>
 
     </section>
 
 
+    <!-- BUTTONS -->
     <section class="buttons">
 
         <button id="startBtn" class="primary">
             START PUSH LAP
         </button>
 
-        <button id="pauseBtn">
+        <button id="pauseBtn" disabled>
             PAUSE
         </button>
 
@@ -125,11 +128,61 @@
     </section>
 
 
+    <!-- NOTE EDITOR -->
+    <section class="panel editor">
+
+        <div class="sectionTitle">
+            <div>
+                <h2>ENGINEER NOTES</h2>
+                <p>Configure exactly when each call plays.</p>
+            </div>
+
+            <button id="addNoteBtn" class="primary small">
+                + ADD NOTE
+            </button>
+        </div>
+
+
+        <div class="noteControls">
+
+            <div>
+                <label>EDITING TRACK</label>
+                <strong id="editingTrack">
+                    Spa-Francorchamps
+                </strong>
+            </div>
+
+            <div>
+                <label>TIMING MODE</label>
+
+                <select id="timingMode">
+                    <option value="absolute">
+                        Absolute Time
+                    </option>
+
+                    <option value="percentage">
+                        Lap Percentage
+                    </option>
+                </select>
+            </div>
+
+        </div>
+
+
+        <div id="notesList"></div>
+
+    </section>
+
+
+    <!-- TIME LOG -->
     <section class="panel logPanel">
 
-        <div class="logHeader">
+        <div class="sectionTitle">
             <h2>TIME LOG</h2>
-            <button id="clearLog">CLEAR</button>
+
+            <button id="clearLog">
+                CLEAR
+            </button>
         </div>
 
         <div id="timeLog">

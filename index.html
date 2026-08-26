@@ -3,209 +3,282 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Racing Engineer V5</title>
-    <link rel="stylesheet" href="./style.css">
+    <meta name="theme-color" content="#080808">
+    <title>Racing Engineer V5.0</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<header>
-    <div>
-        <h1>RACING ENGINEER <span>V5</span></h1>
-        <p>Push Lap Race Engineer</p>
-    </div>
+<div class="app">
 
-    <div id="status" class="status">READY</div>
-</header>
-
-<main>
-
-    <section class="panel controls">
-
-        <div class="control">
-            <label>TRACK</label>
-            <select id="trackSelect"></select>
+    <header>
+        <div>
+            <div class="eyebrow">RACE ENGINEERING SYSTEM</div>
+            <h1>RACING ENGINEER <span>V5.0</span></h1>
         </div>
 
-        <div class="control">
-            <label>TARGET LAP</label>
-
-            <div class="timeInput">
-                <input id="minutes" type="number" min="0" max="9" value="1">
-                <span>:</span>
-                <input id="seconds" type="number" min="0" max="59" value="45">
-                <span>.</span>
-                <input id="milliseconds" type="number" min="0" max="999" value="0">
-            </div>
-        </div>
-
-    </section>
+        <div id="status" class="status">READY</div>
+    </header>
 
 
-    <section class="dashboard">
+    <main>
 
-        <div class="metric panel">
-            <span>CURRENT LAP</span>
-            <strong id="currentLap">0:00.000</strong>
-        </div>
+        <!-- TARGET TIME -->
 
-        <div class="metric panel">
-            <span>TARGET DELTA</span>
-            <strong id="delta">+0:00.000</strong>
-        </div>
+        <section class="panel">
 
-        <div class="metric panel">
-            <span>BEST LAP</span>
-            <strong id="bestLap">--:--.---</strong>
-        </div>
-
-    </section>
-
-
-    <section class="panel engineer">
-
-        <div class="engineerHeader">
-            <span>ENGINEER</span>
-            <span id="cornerCounter">READY</span>
-        </div>
-
-        <div id="call">PUSH LAP READY</div>
-
-        <div id="subCall">
-            Select a track and start your lap.
-        </div>
-
-    </section>
-
-
-    <section class="buttons">
-
-        <button id="startBtn" class="primary">
-            START PUSH LAP
-        </button>
-
-        <button id="pauseBtn" disabled>
-            PAUSE
-        </button>
-
-        <button id="stopBtn">
-            STOP
-        </button>
-
-        <button id="speakBtn">
-            TEST ENGINEER
-        </button>
-
-        <button id="enableAudioBtn" class="primary">
-            ENABLE ENGINEER AUDIO
-        </button>
-
-    </section>
-
-
-    <section class="panel editor">
-
-        <div class="sectionTitle">
-
-            <div>
-                <h2>TRACK ENGINEER</h2>
-                <p>Configure every call on the selected circuit.</p>
+            <div class="title">
+                <span>01</span> TARGET LAP TIME
             </div>
 
-            <button id="addNoteBtn" class="primary small">
-                + ADD CALL
-            </button>
+            <div class="target-time">
 
-        </div>
+                <button id="minusOne">−1.000</button>
+                <button id="minusTenth">−0.100</button>
 
+                <input
+                    id="targetInput"
+                    value="1:45.000"
+                    aria-label="Target lap time"
+                >
 
-        <div class="editorControls">
+                <button id="plusTenth">+0.100</button>
+                <button id="plusOne">+1.000</button>
 
-            <div>
-                <label>TRACK</label>
-                <strong id="editingTrack">-</strong>
             </div>
 
-            <div>
-                <label>TIMING MODE</label>
-
-                <select id="timingMode">
-
-                    <option value="absolute">
-                        Absolute Time
-                    </option>
-
-                    <option value="percentage">
-                        Lap Percentage
-                    </option>
-
-                </select>
+            <div class="preset-row">
+                <button class="preset" data-time="105">1:45</button>
+                <button class="preset" data-time="106">1:46</button>
+                <button class="preset" data-time="107">1:47</button>
+                <button class="preset" data-time="108">1:48</button>
             </div>
 
-        </div>
+        </section>
 
 
-        <div class="filterRow">
+        <!-- LAP CONTROL -->
 
-            <button class="filter active" data-filter="all">
-                ALL
-            </button>
+        <section class="panel">
 
-            <button class="filter" data-filter="BRAKE">
-                BRAKE
-            </button>
-
-            <button class="filter" data-filter="TURN">
-                TURN
-            </button>
-
-            <button class="filter" data-filter="APEX">
-                APEX
-            </button>
-
-            <button class="filter" data-filter="EXIT">
-                EXIT
-            </button>
-
-            <button class="filter" data-filter="CUSTOM">
-                CUSTOM
-            </button>
-
-        </div>
-
-
-        <div id="notesList"></div>
-
-    </section>
-
-
-    <section class="panel logPanel">
-
-        <div class="sectionTitle">
-
-            <h2>TIME LOG</h2>
-
-            <button id="clearLog">
-                CLEAR
-            </button>
-
-        </div>
-
-        <div id="timeLog">
-
-            <div class="empty">
-                No completed laps.
+            <div class="title">
+                <span>02</span> LAP CONTROL
             </div>
 
-        </div>
+            <div class="timer">
+                <div class="small-label">CURRENT LAP</div>
+                <div id="lapTimer">0:00.000</div>
 
-    </section>
+                <div class="delta">
+                    TARGET:
+                    <strong id="targetDisplay">1:45.000</strong>
+                    <span id="deltaDisplay">—</span>
+                </div>
+            </div>
 
-</main>
+            <div class="controls">
+                <button id="startBtn" class="primary">START PUSH LAP</button>
+                <button id="pauseBtn">PAUSE</button>
+                <button id="resetBtn">RESET</button>
+            </div>
+
+        </section>
 
 
-<script src="./tracks.js"></script>
-<script src="./script.js"></script>
+        <!-- MAP -->
+
+        <section class="panel">
+
+            <div class="title">
+                <span>03</span> SPA TRACK MAP
+            </div>
+
+            <div class="map-container">
+
+                <svg id="trackMap"
+                     viewBox="0 0 700 430"
+                     preserveAspectRatio="xMidYMid meet">
+
+                    <path
+                        class="track-shadow"
+                        d="M120 350
+                           C75 315 75 250 125 215
+                           C170 185 150 125 205 95
+                           C255 65 315 80 350 120
+                           C390 165 425 145 470 105
+                           C530 55 610 85 625 140
+                           C640 195 575 210 545 245
+                           C510 285 535 335 480 365
+                           C415 400 360 350 310 325
+                           C260 300 210 390 120 350"
+                    />
+
+                    <path
+                        class="track"
+                        d="M120 350
+                           C75 315 75 250 125 215
+                           C170 185 150 125 205 95
+                           C255 65 315 80 350 120
+                           C390 165 425 145 470 105
+                           C530 55 610 85 625 140
+                           C640 195 575 210 545 245
+                           C510 285 535 335 480 365
+                           C415 400 360 350 310 325
+                           C260 300 210 390 120 350"
+                    />
+
+                    <g id="cornerMarkers"></g>
+
+                </svg>
+
+            </div>
+
+            <div id="selectedCorner" class="selected-corner">
+                Select a corner to edit it.
+            </div>
+
+        </section>
+
+
+        <!-- CORNER EDITOR -->
+
+        <section class="panel">
+
+            <div class="title">
+                <span>04</span> CORNER ENGINEER
+
+                <button id="addCorner" class="small-button">
+                    + ADD
+                </button>
+            </div>
+
+            <div id="cornerEditor">
+
+                <div class="empty">
+                    Select a map corner.
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ENGINEER -->
+
+        <section class="panel">
+
+            <div class="title">
+                <span>05</span> ENGINEER AUDIO
+            </div>
+
+            <div class="engineer-screen">
+
+                <div class="small-label">CURRENT CALL</div>
+
+                <div id="currentCall">
+                    ENGINEER READY
+                </div>
+
+                <div class="small-label next-label">
+                    NEXT
+                </div>
+
+                <div id="nextCall">
+                    PUSH LAP
+                </div>
+
+            </div>
+
+            <div class="audio-buttons">
+                <button id="testVoice">TEST ENGINEER</button>
+                <button id="muteBtn">🔊 AUDIO ON</button>
+            </div>
+
+            <label class="toggle">
+                <span>Automatic engineer calls</span>
+                <input id="autoCalls" type="checkbox" checked>
+            </label>
+
+            <label class="toggle">
+                <span>Use recorded driver voice</span>
+                <input id="useRecording" type="checkbox">
+            </label>
+
+        </section>
+
+
+        <!-- RECORDER -->
+
+        <section class="panel">
+
+            <div class="title">
+                <span>06</span> SPECIAL VOICE RECORDER
+            </div>
+
+            <div class="record-status">
+
+                <div id="micLight">●</div>
+
+                <div>
+                    <div class="small-label">MICROPHONE</div>
+                    <div id="recordStatus">
+                        Ready
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="record-buttons">
+
+                <button id="recordBtn" class="record">
+                    🎙 RECORD
+                </button>
+
+                <button id="stopRecordBtn" disabled>
+                    ⏹ STOP
+                </button>
+
+                <button id="playRecordBtn" disabled>
+                    ▶ PLAY
+                </button>
+
+                <button id="deleteRecordBtn" disabled>
+                    🗑 DELETE
+                </button>
+
+            </div>
+
+            <audio id="recordedAudio" controls hidden></audio>
+
+        </section>
+
+
+        <!-- SYSTEM -->
+
+        <section class="panel system">
+
+            <div class="title">
+                <span>07</span> SYSTEM
+            </div>
+
+            <div id="systemMessage">
+                V5.0 initialized.
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <footer>
+        <span>RACING ENGINEER V5.0</span>
+        <span>SPA-FRANCORCHAMPS</span>
+    </footer>
+
+</div>
+
+<script src="script.js"></script>
 
 </body>
 </html>

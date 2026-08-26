@@ -1,5 +1,5 @@
 // =====================================================
-// RACING ENGINEER V4.2
+// RACING ENGINEER V4.3 ENGINE
 // =====================================================
 
 let running = false;
@@ -16,134 +16,155 @@ let bestLap = null;
 
 let triggeredNotes = new Set();
 
+let activeFilter = "all";
+
 
 // =====================================================
 // ELEMENTS
 // =====================================================
 
-const startBtn = document.getElementById("startBtn");
-const pauseBtn = document.getElementById("pauseBtn");
-const stopBtn = document.getElementById("stopBtn");
-const speakBtn = document.getElementById("speakBtn");
+const trackSelect =
+    document.getElementById("trackSelect");
 
-const currentLapEl = document.getElementById("currentLap");
-const deltaEl = document.getElementById("delta");
-const bestLapEl = document.getElementById("bestLap");
+const startBtn =
+    document.getElementById("startBtn");
 
-const statusEl = document.getElementById("status");
-const callEl = document.getElementById("call");
-const subCallEl = document.getElementById("subCall");
+const pauseBtn =
+    document.getElementById("pauseBtn");
 
-const trackSelect = document.getElementById("trackSelect");
+const stopBtn =
+    document.getElementById("stopBtn");
 
-const minutesEl = document.getElementById("minutes");
-const secondsEl = document.getElementById("seconds");
-const millisecondsEl = document.getElementById("milliseconds");
+const speakBtn =
+    document.getElementById("speakBtn");
 
-const notesList = document.getElementById("notesList");
-const addNoteBtn = document.getElementById("addNoteBtn");
+const addNoteBtn =
+    document.getElementById("addNoteBtn");
 
-const editingTrack = document.getElementById("editingTrack");
-const timingMode = document.getElementById("timingMode");
+const currentLapEl =
+    document.getElementById("currentLap");
 
-const timeLog = document.getElementById("timeLog");
+const deltaEl =
+    document.getElementById("delta");
 
+const bestLapEl =
+    document.getElementById("bestLap");
 
-// =====================================================
-// DEFAULT NOTES
-// =====================================================
+const statusEl =
+    document.getElementById("status");
 
-const defaultNotes = {
+const callEl =
+    document.getElementById("call");
 
-    spa: [
-        {
-            id: crypto.randomUUID(),
-            corner: "T1",
-            time: 18.2,
-            call: "BRAKE HARD",
-            detail: "100 meter board",
-            gear: "3",
-            enabled: true,
-            voice: true
-        },
+const subCallEl =
+    document.getElementById("subCall");
 
-        {
-            id: crypto.randomUUID(),
-            corner: "T2",
-            time: 22.4,
-            call: "TURN LEFT",
-            detail: "Late apex",
-            gear: "3",
-            enabled: true,
-            voice: true
-        },
+const notesList =
+    document.getElementById("notesList");
 
-        {
-            id: crypto.randomUUID(),
-            corner: "T3",
-            time: 25.8,
-            call: "RIGHT HANDER",
-            detail: "Build throttle",
-            gear: "4",
-            enabled: true,
-            voice: true
-        }
-    ],
+const editingTrack =
+    document.getElementById("editingTrack");
 
-    bahrain: [],
-    jeddah: [],
-    australia: [],
-    japan: [],
-    miami: [],
-    imola: [],
-    monaco: [],
-    canada: [],
-    austria: [],
-    britain: [],
-    hungary: [],
-    belgium: [],
-    netherlands: [],
-    italy: [],
-    azerbaijan: [],
-    singapore: [],
-    usa: [],
-    mexico: [],
-    brazil: [],
-    lasvegas: [],
-    qatar: [],
-    abudhabi: []
-};
+const timingMode =
+    document.getElementById("timingMode");
+
+const timeLog =
+    document.getElementById("timeLog");
+
+const minutesEl =
+    document.getElementById("minutes");
+
+const secondsEl =
+    document.getElementById("seconds");
+
+const millisecondsEl =
+    document.getElementById("milliseconds");
 
 
 // =====================================================
 // STORAGE
 // =====================================================
 
-function loadNotes() {
+const STORAGE_KEY =
+    "racingEngineerV43";
+
+
+function loadDatabase() {
 
     const saved =
         localStorage.getItem(
-            "racingEngineerNotesV42"
+            STORAGE_KEY
         );
 
     if (saved) {
 
-        return JSON.parse(saved);
+        try {
 
+            return JSON.parse(saved);
+
+        } catch (error) {
+
+            console.error(
+                "Could not load saved data",
+                error
+            );
+        }
     }
 
-    return defaultNotes;
+
+    const copy =
+        JSON.parse(
+            JSON.stringify(TRACKS)
+        );
+
+    localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(copy)
+    );
+
+    return copy;
 }
 
 
-let notesDatabase = loadNotes();
+let database =
+    loadDatabase();
 
 
-function saveNotes() {
+function saveDatabase() {
 
     localStorage.setItem(
-        "racingEngineerNotesV42",
-        JSON.stringify(notesDatabase)
+        STORAGE_KEY,
+        JSON.stringify(database)
+    );
+}
+
+
+// =====================================================
+// TRACK SELECTOR
+// =====================================================
+
+function populateTracks() {
+
+    trackSelect.innerHTML = "";
+
+    Object.keys(database).forEach(
+        key => {
+
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+            option.value =
+                key;
+
+            option.textContent =
+                database[key].name;
+
+            trackSelect.appendChild(
+                option
+            );
+        }
     );
 }
 
@@ -158,19 +179,19 @@ function getTargetTime() {
         Number(minutesEl.value) || 0;
 
     const seconds =
-        Math.min(
-            59,
-            Math.max(
-                0,
+        Math.max(
+            0,
+            Math.min(
+                59,
                 Number(secondsEl.value) || 0
             )
         );
 
     const milliseconds =
-        Math.min(
-            999,
-            Math.max(
-                0,
+        Math.max(
+            0,
+            Math.min(
+                999,
                 Number(millisecondsEl.value) || 0
             )
         );
@@ -186,6 +207,7 @@ function getTargetTime() {
 function formatTime(ms) {
 
     if (!Number.isFinite(ms)) {
+
         return "--:--.---";
     }
 
@@ -196,7 +218,9 @@ function formatTime(ms) {
         );
 
     const minutes =
-        Math.floor(total / 60000);
+        Math.floor(
+            total / 60000
+        );
 
     const seconds =
         Math.floor(
@@ -217,8 +241,11 @@ function formatTime(ms) {
 function formatDelta(ms) {
 
     return (
-        ms >= 0 ? "+" : "-"
-    ) + formatTime(
+        ms >= 0
+            ? "+"
+            : "-"
+    ) +
+    formatTime(
         Math.abs(ms)
     );
 }
@@ -239,11 +266,18 @@ function speak(text) {
     speechSynthesis.cancel();
 
     const utterance =
-        new SpeechSynthesisUtterance(text);
+        new SpeechSynthesisUtterance(
+            text
+        );
 
-    utterance.rate = 1.05;
-    utterance.pitch = 1;
-    utterance.volume = 1;
+    utterance.rate =
+        1.05;
+
+    utterance.pitch =
+        1;
+
+    utterance.volume =
+        1;
 
     speechSynthesis.speak(
         utterance
@@ -253,50 +287,73 @@ function speak(text) {
 
 function engineerCall(
     main,
-    sub = "",
-    shouldSpeak = true
+    detail = "",
+    voice = true
 ) {
 
     callEl.textContent =
         main;
 
     subCallEl.textContent =
-        sub;
+        detail;
 
-    if (shouldSpeak) {
+    if (voice) {
 
         speak(
-            `${main}. ${sub}`
+            `${main}. ${detail}`
         );
     }
 }
 
 
 // =====================================================
-// NOTE EDITOR
+// EDITOR
 // =====================================================
 
 function renderNotes() {
 
-    const track =
+    const key =
         trackSelect.value;
 
-    const notes =
-        notesDatabase[track] || [];
+    const track =
+        database[key];
 
     editingTrack.textContent =
-        trackSelect.options[
-            trackSelect.selectedIndex
-        ].text;
+        track.name;
 
     notesList.innerHTML = "";
+
+
+    let notes =
+        [...track.notes];
+
+
+    if (
+        activeFilter !==
+        "all"
+    ) {
+
+        notes =
+            notes.filter(
+                note =>
+                    note.type ===
+                    activeFilter
+            );
+    }
+
+
+    notes.sort(
+        (a, b) =>
+            Number(a.time) -
+            Number(b.time)
+    );
+
 
     if (!notes.length) {
 
         notesList.innerHTML = `
             <div class="empty">
-                No custom notes yet.
-                Press "+ ADD NOTE".
+                No calls match this filter.
             </div>
         `;
 
@@ -304,324 +361,438 @@ function renderNotes() {
     }
 
 
-    notes
-        .sort(
-            (a, b) =>
-                Number(a.time) -
-                Number(b.time)
-        )
-        .forEach(note => {
-
-            const card =
-                document.createElement(
-                    "div"
-                );
-
-            card.className =
-                "noteCard";
-
-            card.innerHTML = `
-
-                <div class="noteTop">
-
-                    <div class="noteField">
-
-                        <label>CORNER</label>
-
-                        <input
-                            class="noteCorner"
-                            value="${escapeHTML(note.corner)}"
-                        >
-
-                    </div>
-
-
-                    <div class="noteField">
-
-                        <label>
-                            TRIGGER TIME / %
-                        </label>
-
-                        <input
-                            type="number"
-                            step="0.1"
-                            class="noteTime"
-                            value="${note.time}"
-                        >
-
-                    </div>
-
-
-                    <div class="noteField">
-
-                        <label>GEAR</label>
-
-                        <input
-                            class="noteGear"
-                            value="${escapeHTML(note.gear)}"
-                        >
-
-                    </div>
-
-                </div>
-
-
-                <div class="noteMiddle">
-
-                    <div class="noteField">
-
-                        <label>ENGINEER CALL</label>
-
-                        <input
-                            class="noteCall"
-                            value="${escapeHTML(note.call)}"
-                        >
-
-                    </div>
-
-
-                    <div class="noteField">
-
-                        <label>DETAIL</label>
-
-                        <input
-                            class="noteDetail"
-                            value="${escapeHTML(note.detail)}"
-                        >
-
-                    </div>
-
-
-                    <div class="noteField">
-
-                        <label>ENABLED</label>
-
-                        <select class="noteEnabled">
-
-                            <option
-                                value="true"
-                                ${note.enabled ? "selected" : ""}
-                            >
-                                ON
-                            </option>
-
-                            <option
-                                value="false"
-                                ${!note.enabled ? "selected" : ""}
-                            >
-                                OFF
-                            </option>
-
-                        </select>
-
-                    </div>
-
-                </div>
-
-
-                <div class="noteActions">
-
-                    <label>
-                        <input
-                            type="checkbox"
-                            class="noteVoice"
-                            ${note.voice ? "checked" : ""}
-                        >
-                        Voice
-                    </label>
-
-                    <button
-                        class="testNote"
-                    >
-                        TEST
-                    </button>
-
-                    <button
-                        class="saveNote primary"
-                    >
-                        SAVE
-                    </button>
-
-                    <button
-                        class="deleteNote"
-                    >
-                        DELETE
-                    </button>
-
-                </div>
-            `;
-
-
-            // SAVE
-
-            card
-                .querySelector(
-                    ".saveNote"
-                )
-                .addEventListener(
-                    "click",
-                    () => {
-
-                        note.corner =
-                            card.querySelector(
-                                ".noteCorner"
-                            ).value;
-
-                        note.time =
-                            Number(
-                                card.querySelector(
-                                    ".noteTime"
-                                ).value
-                            ) || 0;
-
-                        note.gear =
-                            card.querySelector(
-                                ".noteGear"
-                            ).value;
-
-                        note.call =
-                            card.querySelector(
-                                ".noteCall"
-                            ).value;
-
-                        note.detail =
-                            card.querySelector(
-                                ".noteDetail"
-                            ).value;
-
-                        note.enabled =
-                            card.querySelector(
-                                ".noteEnabled"
-                            ).value === "true";
-
-                        note.voice =
-                            card.querySelector(
-                                ".noteVoice"
-                            ).checked;
-
-                        saveNotes();
-
-                        renderNotes();
-
-                        engineerCall(
-                            "NOTE SAVED",
-                            `${note.corner} — ${note.call}`,
-                            false
-                        );
-                    }
-                );
-
-
-            // DELETE
-
-            card
-                .querySelector(
-                    ".deleteNote"
-                )
-                .addEventListener(
-                    "click",
-                    () => {
-
-                        notesDatabase[
-                            track
-                        ] =
-                            notesDatabase[
-                                track
-                            ].filter(
-                                n =>
-                                    n.id !==
-                                    note.id
-                            );
-
-                        saveNotes();
-
-                        renderNotes();
-                    }
-                );
-
-
-            // TEST
-
-            card
-                .querySelector(
-                    ".testNote"
-                )
-                .addEventListener(
-                    "click",
-                    () => {
-
-                        const text =
-                            `${note.call}. ${note.detail}`;
-
-                        engineerCall(
-                            note.call,
-                            note.detail
-                        );
-                    }
-                );
-
-
-            notesList.appendChild(
-                card
+    notes.forEach(
+        note => {
+
+            createNoteCard(
+                track,
+                note
             );
-        });
+        }
+    );
 }
 
 
-function addNote() {
+function createNoteCard(
+    track,
+    note
+) {
 
-    const track =
-        trackSelect.value;
+    const card =
+        document.createElement(
+            "div"
+        );
 
-    if (!notesDatabase[track]) {
-        notesDatabase[track] = [];
-    }
-
-    notesDatabase[track].push({
-
-        id:
-            crypto.randomUUID(),
-
-        corner:
-            "T1",
-
-        time:
-            10,
-
-        call:
-            "CUSTOM CALL",
-
-        detail:
-            "Your note here",
-
-        gear:
-            "3",
-
-        enabled:
-            true,
-
-        voice:
-            true
-    });
-
-    saveNotes();
-
-    renderNotes();
-}
+    card.className =
+        "noteCard";
 
 
-function escapeHTML(value) {
+    card.innerHTML = `
 
-    return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;");
+        <div class="noteTop">
+
+            <div>
+
+                <label>CORNER</label>
+
+                <input
+                    class="corner"
+                    value="${escapeHTML(note.corner)}"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label>
+                    TRIGGER
+                </label>
+
+                <input
+                    class="time"
+                    type="number"
+                    step="0.1"
+                    value="${note.time}"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label>TYPE</label>
+
+                <select class="type">
+
+                    ${[
+                        "BRAKE",
+                        "TURN",
+                        "APEX",
+                        "EXIT",
+                        "THROTTLE",
+                        "GEAR",
+                        "DRS",
+                        "ERS",
+                        "LIFT",
+                        "CUSTOM"
+                    ]
+                    .map(
+                        type => `
+                            <option
+                                ${note.type === type ? "selected" : ""}
+                            >
+                                ${type}
+                            </option>
+                        `
+                    )
+                    .join("")}
+
+                </select>
+
+            </div>
+
+        </div>
+
+
+        <div class="noteMiddle">
+
+            <div>
+
+                <label>ENGINEER CALL</label>
+
+                <input
+                    class="call"
+                    value="${escapeHTML(note.call)}"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label>DETAIL</label>
+
+                <input
+                    class="detail"
+                    value="${escapeHTML(note.detail)}"
+                >
+
+            </div>
+
+
+            <div>
+
+                <label>GEAR</label>
+
+                <input
+                    class="gear"
+                    value="${escapeHTML(note.gear)}"
+                >
+
+            </div>
+
+        </div>
+
+
+        <div class="noteBottom">
+
+            <div>
+
+                <label>ENABLED</label>
+
+                <select class="enabled">
+
+                    <option
+                        value="true"
+                        ${note.enabled ? "selected" : ""}
+                    >
+                        ON
+                    </option>
+
+                    <option
+                        value="false"
+                        ${!note.enabled ? "selected" : ""}
+                    >
+                        OFF
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div>
+
+                <label>VOICE</label>
+
+                <select class="voice">
+
+                    <option
+                        value="true"
+                        ${note.voice ? "selected" : ""}
+                    >
+                        ON
+                    </option>
+
+                    <option
+                        value="false"
+                        ${!note.voice ? "selected" : ""}
+                    >
+                        OFF
+                    </option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+
+        <div class="noteActions">
+
+            <button class="test">
+                TEST
+            </button>
+
+            <button class="save primary">
+                SAVE
+            </button>
+
+            <button class="deleteNote">
+                DELETE
+            </button>
+
+        </div>
+    `;
+
+
+    const get =
+        selector =>
+            card.querySelector(
+                selector
+            );
+
+
+    // SAVE
+
+    get(".save")
+        .addEventListener(
+            "click",
+            () => {
+
+                note.corner =
+                    get(".corner").value;
+
+                note.time =
+                    Number(
+                        get(".time").value
+                    ) || 0;
+
+                note.type =
+                    get(".type").value;
+
+                note.call =
+                    get(".call").value;
+
+                note.detail =
+                    get(".detail").value;
+
+                note.gear =
+                    get(".gear").value;
+
+                note.enabled =
+                    get(".enabled").value ===
+                    "true";
+
+                note.voice =
+                    get(".voice").value ===
+                    "true";
+
+                saveDatabase();
+
+                renderNotes();
+
+                engineerCall(
+                    "CALL SAVED",
+                    `${note.corner} — ${note.call}`,
+                    false
+                );
+            }
+        );
+
+
+    // TEST
+
+    get(".test")
+        .addEventListener(
+            "click",
+            () => {
+
+                engineerCall(
+                    note.call,
+                    note.detail,
+                    true
+                );
+            }
+        );
+
+
+    // DELETE
+
+    get(".deleteNote")
+        .addEventListener(
+            "click",
+            () => {
+
+                track.notes =
+                    track.notes.filter(
+                        item =>
+                            item.id !==
+                            note.id
+                    );
+
+                saveDatabase();
+
+                renderNotes();
+            }
+        );
+
+
+    notesList.appendChild(
+        card
+    );
 }
 
 
 // =====================================================
-// LAP ENGINE
+// ADD NOTE
+// =====================================================
+
+addNoteBtn.addEventListener(
+    "click",
+    () => {
+
+        const track =
+            database[
+                trackSelect.value
+            ];
+
+        track.notes.push({
+
+            id:
+                crypto.randomUUID(),
+
+            corner:
+                "T1",
+
+            type:
+                "CUSTOM",
+
+            time:
+                10,
+
+            call:
+                "CUSTOM CALL",
+
+            detail:
+                "Your note",
+
+            gear:
+                "3",
+
+            enabled:
+                true,
+
+            voice:
+                true
+        });
+
+
+        saveDatabase();
+
+        activeFilter =
+            "all";
+
+        updateFilterButtons();
+
+        renderNotes();
+    }
+);
+
+
+// =====================================================
+// FILTERS
+// =====================================================
+
+document
+    .querySelectorAll(".filter")
+    .forEach(
+        button => {
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    activeFilter =
+                        button.dataset.filter;
+
+                    updateFilterButtons();
+
+                    renderNotes();
+                }
+            );
+        }
+    );
+
+
+function updateFilterButtons() {
+
+    document
+        .querySelectorAll(".filter")
+        .forEach(
+            button => {
+
+                button.classList.toggle(
+                    "active",
+                    button.dataset.filter ===
+                    activeFilter
+                );
+            }
+        );
+}
+
+
+// =====================================================
+// NOTE TIMING
+// =====================================================
+
+function getTriggerTime(
+    note
+) {
+
+    if (
+        timingMode.value ===
+        "percentage"
+    ) {
+
+        return (
+            getTargetTime() *
+            Number(note.time) /
+            100
+        );
+    }
+
+
+    return (
+        Number(note.time) *
+        1000
+    );
+}
+
+
+// =====================================================
+// LAP
 // =====================================================
 
 function startLap() {
@@ -630,13 +801,14 @@ function startLap() {
         return;
     }
 
-    running = true;
+    running =
+        true;
 
-    paused = false;
+    paused =
+        false;
 
-    pausedTime = 0;
-
-    pauseStart = 0;
+    pausedTime =
+        0;
 
     triggeredNotes =
         new Set();
@@ -655,15 +827,18 @@ function startLap() {
     pauseBtn.disabled =
         false;
 
-    const trackName =
-        trackSelect.options[
-            trackSelect.selectedIndex
-        ].text;
+
+    const track =
+        database[
+            trackSelect.value
+        ];
+
 
     engineerCall(
         "PUSH LAP",
-        `${trackName} — target ${formatTime(getTargetTime())}`
+        `${track.name} — target ${formatTime(getTargetTime())}`
     );
+
 
     updateTimer();
 }
@@ -675,6 +850,7 @@ function updateTimer() {
         return;
     }
 
+
     if (!paused) {
 
         const elapsed =
@@ -682,8 +858,12 @@ function updateTimer() {
             lapStart -
             pausedTime;
 
+
         currentLapEl.textContent =
-            formatTime(elapsed);
+            formatTime(
+                elapsed
+            );
+
 
         deltaEl.textContent =
             formatDelta(
@@ -691,10 +871,12 @@ function updateTimer() {
                 getTargetTime()
             );
 
-        checkNotes(
+
+        triggerNotes(
             elapsed
         );
     }
+
 
     animationFrame =
         requestAnimationFrame(
@@ -703,192 +885,229 @@ function updateTimer() {
 }
 
 
-// =====================================================
-// NOTE TRIGGERING
-// =====================================================
-
-function checkNotes(elapsed) {
+function triggerNotes(
+    elapsed
+) {
 
     const track =
-        trackSelect.value;
-
-    const notes =
-        notesDatabase[track] || [];
-
-    const target =
-        getTargetTime();
-
-    notes.forEach(note => {
-
-        if (!note.enabled) {
-            return;
-        }
-
-        let triggerTime;
-
-        if (
-            timingMode.value ===
-            "percentage"
-        ) {
-
-            triggerTime =
-                target *
-                (Number(note.time) / 100);
-
-        } else {
-
-            triggerTime =
-                Number(note.time) *
-                1000;
-        }
+        database[
+            trackSelect.value
+        ];
 
 
-        if (
-            elapsed >= triggerTime &&
-            !triggeredNotes.has(note.id)
-        ) {
+    track.notes.forEach(
+        note => {
 
-            triggeredNotes.add(
-                note.id
-            );
+            if (
+                !note.enabled
+            ) {
+                return;
+            }
 
-            const message =
-                `${note.call}. ${note.detail}`;
 
-            callEl.textContent =
-                note.call;
+            if (
+                triggeredNotes.has(
+                    note.id
+                )
+            ) {
+                return;
+            }
 
-            subCallEl.textContent =
-                note.detail ||
-                `Gear ${note.gear}`;
 
-            if (note.voice) {
-                speak(message);
+            const trigger =
+                getTriggerTime(
+                    note
+                );
+
+
+            if (
+                elapsed >=
+                trigger
+            ) {
+
+                triggeredNotes.add(
+                    note.id
+                );
+
+
+                callEl.textContent =
+                    note.call;
+
+                subCallEl.textContent =
+                    note.detail;
+
+
+                if (
+                    note.voice
+                ) {
+
+                    speak(
+                        `${note.call}. ${note.detail}`
+                    );
+                }
+
             }
 
         }
-
-    });
+    );
 }
 
 
-function pauseLap() {
+// =====================================================
+// PAUSE
+// =====================================================
 
-    if (!running) {
-        return;
+pauseBtn.addEventListener(
+    "click",
+    () => {
+
+        if (!running) {
+            return;
+        }
+
+
+        if (!paused) {
+
+            paused =
+                true;
+
+            pauseStart =
+                performance.now();
+
+            statusEl.textContent =
+                "PAUSED";
+
+            pauseBtn.textContent =
+                "RESUME";
+
+
+            engineerCall(
+                "PAUSED",
+                "Lap timer stopped."
+            );
+
+        } else {
+
+            paused =
+                false;
+
+            pausedTime +=
+                performance.now() -
+                pauseStart;
+
+            statusEl.textContent =
+                "PUSH LAP";
+
+            pauseBtn.textContent =
+                "PAUSE";
+
+
+            engineerCall(
+                "RESUME",
+                "Back on the push lap."
+            );
+        }
     }
+);
 
-    if (!paused) {
 
-        paused = true;
+// =====================================================
+// STOP
+// =====================================================
 
-        pauseStart =
-            performance.now();
+stopBtn.addEventListener(
+    "click",
+    () => {
 
-        statusEl.textContent =
-            "PAUSED";
+        if (!running) {
+            return;
+        }
 
-        pauseBtn.textContent =
-            "RESUME";
 
-        engineerCall(
-            "PAUSED",
-            "Lap timer stopped."
+        const elapsed =
+            paused
+                ? pauseStart -
+                  lapStart -
+                  pausedTime
+
+                : performance.now() -
+                  lapStart -
+                  pausedTime;
+
+
+        running =
+            false;
+
+        paused =
+            false;
+
+
+        cancelAnimationFrame(
+            animationFrame
         );
 
-    } else {
 
-        paused = false;
+        currentLapEl.textContent =
+            formatTime(
+                elapsed
+            );
 
-        pausedTime +=
-            performance.now() -
-            pauseStart;
+
+        const delta =
+            elapsed -
+            getTargetTime();
+
+
+        deltaEl.textContent =
+            formatDelta(
+                delta
+            );
+
+
+        const isBest =
+            bestLap === null ||
+            elapsed < bestLap;
+
+
+        if (isBest) {
+
+            bestLap =
+                elapsed;
+
+            bestLapEl.textContent =
+                formatTime(
+                    bestLap
+                );
+        }
+
+
+        addLog(
+            lapNumber,
+            elapsed,
+            delta,
+            isBest
+        );
+
+
+        statusEl.textContent =
+            "READY";
+
+        startBtn.textContent =
+            "START PUSH LAP";
 
         pauseBtn.textContent =
             "PAUSE";
 
-        statusEl.textContent =
-            "PUSH LAP";
+        pauseBtn.disabled =
+            true;
+
 
         engineerCall(
-            "RESUME",
-            "Back on the push lap."
+            "LAP COMPLETE",
+            `${formatTime(elapsed)} — ${formatDelta(delta)}`
         );
     }
-}
-
-
-function stopLap() {
-
-    if (!running) {
-        return;
-    }
-
-    const elapsed =
-        paused
-            ? pauseStart -
-              lapStart -
-              pausedTime
-
-            : performance.now() -
-              lapStart -
-              pausedTime;
-
-    running = false;
-
-    paused = false;
-
-    cancelAnimationFrame(
-        animationFrame
-    );
-
-    currentLapEl.textContent =
-        formatTime(elapsed);
-
-    const delta =
-        elapsed -
-        getTargetTime();
-
-    deltaEl.textContent =
-        formatDelta(delta);
-
-    const isBest =
-        bestLap === null ||
-        elapsed < bestLap;
-
-    if (isBest) {
-
-        bestLap =
-            elapsed;
-
-        bestLapEl.textContent =
-            formatTime(bestLap);
-    }
-
-    addLog(
-        lapNumber,
-        elapsed,
-        delta,
-        isBest
-    );
-
-    statusEl.textContent =
-        "READY";
-
-    startBtn.textContent =
-        "START PUSH LAP";
-
-    pauseBtn.textContent =
-        "PAUSE";
-
-    pauseBtn.disabled =
-        true;
-
-    engineerCall(
-        "LAP COMPLETE",
-        `${formatTime(elapsed)} — ${formatDelta(delta)}`
-    );
-}
+);
 
 
 // =====================================================
@@ -907,47 +1126,163 @@ function addLog(
             ".empty"
         );
 
+
     if (empty) {
         empty.remove();
     }
+
 
     const row =
         document.createElement(
             "div"
         );
 
+
     row.className =
         "logRow";
 
+
     row.innerHTML = `
-        <span>${lap}</span>
-        <span>${formatTime(time)}</span>
-        <span>${formatDelta(delta)}</span>
-        <span>${isBest ? "★ BEST" : ""}</span>
+
+        <span>
+            ${lap}
+        </span>
+
+        <span>
+            ${formatTime(time)}
+        </span>
+
+        <span>
+            ${formatDelta(delta)}
+        </span>
+
+        <span>
+            ${isBest ? "★ BEST" : ""}
+        </span>
     `;
 
-    timeLog.prepend(row);
+
+    timeLog.prepend(
+        row
+    );
 }
 
 
 // =====================================================
-// BUTTONS
+// CLEAR LOG
 // =====================================================
 
-startBtn.addEventListener(
-    "click",
-    startLap
+document
+    .getElementById("clearLog")
+    .addEventListener(
+        "click",
+        () => {
+
+            timeLog.innerHTML = `
+                <div class="empty">
+                    No completed laps.
+                </div>
+            `;
+
+            lapNumber =
+                0;
+
+            bestLap =
+                null;
+
+            bestLapEl.textContent =
+                "--:--.---";
+        }
+    );
+
+
+// =====================================================
+// TRACK CHANGE
+// =====================================================
+
+trackSelect.addEventListener(
+    "change",
+    () => {
+
+        if (running) {
+            return;
+        }
+
+
+        activeFilter =
+            "all";
+
+        updateFilterButtons();
+
+        renderNotes();
+
+
+        const track =
+            database[
+                trackSelect.value
+            ];
+
+
+        engineerCall(
+            track.name,
+            "Track selected. Push lap ready.",
+            false
+        );
+    }
 );
 
-pauseBtn.addEventListener(
-    "click",
-    pauseLap
+
+// =====================================================
+// TARGET CHANGE
+// =====================================================
+
+[
+    minutesEl,
+    secondsEl,
+    millisecondsEl
+].forEach(
+    input => {
+
+        input.addEventListener(
+            "change",
+            () => {
+
+                if (!running) {
+
+                    engineerCall(
+                        "TARGET UPDATED",
+                        `Target ${formatTime(getTargetTime())}`,
+                        false
+                    );
+                }
+            }
+        );
+    }
 );
 
-stopBtn.addEventListener(
-    "click",
-    stopLap
+
+// =====================================================
+// TIMING MODE
+// =====================================================
+
+timingMode.addEventListener(
+    "change",
+    () => {
+
+        engineerCall(
+            "TIMING MODE",
+            timingMode.options[
+                timingMode.selectedIndex
+            ].text,
+            false
+        );
+    }
 );
+
+
+// =====================================================
+// TEST ENGINEER
+// =====================================================
 
 speakBtn.addEventListener(
     "click",
@@ -960,68 +1295,45 @@ speakBtn.addEventListener(
     }
 );
 
-addNoteBtn.addEventListener(
-    "click",
-    addNote
-);
 
-trackSelect.addEventListener(
-    "change",
-    () => {
+// =====================================================
+// HTML SAFETY
+// =====================================================
 
-        if (!running) {
+function escapeHTML(
+    value
+) {
 
-            renderNotes();
-
-            const name =
-                trackSelect.options[
-                    trackSelect.selectedIndex
-                ].text;
-
-            engineerCall(
-                name,
-                "Track selected.",
-                false
-            );
-        }
-    }
-);
-
-timingMode.addEventListener(
-    "change",
-    renderNotes
-);
-
-
-document
-    .getElementById("clearLog")
-    .addEventListener(
-        "click",
-        () => {
-
-            timeLog.innerHTML =
-                `<div class="empty">
-                    No completed laps.
-                </div>`;
-
-            lapNumber = 0;
-
-            bestLap = null;
-
-            bestLapEl.textContent =
-                "--:--.---";
-        }
-    );
+    return String(value)
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
+        .replaceAll(
+            '"',
+            "&quot;"
+        );
+}
 
 
 // =====================================================
-// INITIALIZE
+// STARTUP
 // =====================================================
+
+populateTracks();
 
 renderNotes();
 
 engineerCall(
     "PUSH LAP READY",
-    "Configure your notes below.",
+    "Select your track and target time.",
     false
 );

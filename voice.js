@@ -1,3 +1,4 @@
+alert("VOICE JS LOADED");
 // =====================================================
 // RACING ENGINEER V5.1
 // VOICE RECORDING SYSTEM

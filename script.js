@@ -1357,3 +1357,7 @@ pauseBtn.disabled = true;
 console.log(
     "Racing Engineer V4.3 loaded successfully."
 );
+
+window.startLap = startLap;
+window.togglePause = togglePause;
+window.stopLap = stopLap;

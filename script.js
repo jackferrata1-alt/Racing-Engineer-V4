@@ -121,22 +121,172 @@ if (!enableAudioBtn) {
 
 
 // =====================================================
-// AUDIO UNLOCK
+// AUDIO ENGINE V4.5
 // =====================================================
 
+let audioEnabled = false;
+
+const engineerAudio = new Audio();
+
+engineerAudio.volume = 1.0;
+engineerAudio.preload = "auto";
+
+
+// -----------------------------------------------------
+// AUDIO FILE MAP
+// -----------------------------------------------------
+
+const AUDIO_FILES = {
+
+    "PUSH LAP": "audio/push_lap.mp3",
+
+    "TURN 1 — BRAKE":
+        "audio/turn1_brake.mp3",
+
+    "TURN 2 — LEFT":
+        "audio/turn2_left.mp3",
+
+    "TURN 3 — RIGHT":
+        "audio/turn3_right.mp3",
+
+    "TURN 4 — LEFT":
+        "audio/turn4_left.mp3"
+
+};
+
+
+// -----------------------------------------------------
+// ENABLE AUDIO
+// -----------------------------------------------------
+
 function enableEngineerAudio() {
+
+    try {
+
+        engineerAudio.src =
+            "audio/silence.mp3";
+
+        engineerAudio.volume = 0;
+
+        const unlock =
+            engineerAudio.play();
+
+        if (unlock !== undefined) {
+
+            unlock.then(() => {
+
+                engineerAudio.pause();
+
+                engineerAudio.currentTime = 0;
+
+                engineerAudio.volume = 1;
+
+                audioEnabled = true;
+
+                enableAudioBtn.textContent =
+                    "ENGINEER AUDIO ENABLED";
+
+                enableAudioBtn.disabled =
+                    true;
+
+                statusEl.textContent =
+                    "AUDIO READY";
+
+            }).catch(error => {
+
+                console.error(
+                    "Audio unlock failed:",
+                    error
+                );
+
+                statusEl.textContent =
+                    "AUDIO ERROR";
+
+            });
+
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Audio system error:",
+            error
+        );
+    }
+}
+
+
+// -----------------------------------------------------
+// PLAY ENGINEER AUDIO
+// -----------------------------------------------------
+
+function playEngineerAudio(call) {
+
+    if (!audioEnabled) {
+        return;
+    }
+
+
+    const file =
+        AUDIO_FILES[call];
+
+
+    if (!file) {
+
+        console.warn(
+            "No audio file for:",
+            call
+        );
+
+        return;
+    }
+
+
+    try {
+
+        engineerAudio.pause();
+
+        engineerAudio.currentTime = 0;
+
+        engineerAudio.src = file;
+
+        engineerAudio.volume = 1;
+
+        engineerAudio.play().catch(
+            error => {
+
+                console.error(
+                    "Audio playback failed:",
+                    error
+                );
+
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Engineer audio error:",
+            error
+        );
+    }
+}
+
+
+// -----------------------------------------------------
+// SPEECH FALLBACK
+// -----------------------------------------------------
+
+function speak(text) {
+
+    if (!audioEnabled) {
+        return;
+    }
+
 
     if (
         !("speechSynthesis" in window)
     ) {
-
-        alert(
-            "Speech synthesis is not available in this Quest browser."
-        );
-
-        statusEl.textContent =
-            "AUDIO UNAVAILABLE";
-
         return;
     }
 
@@ -146,76 +296,31 @@ function enableEngineerAudio() {
         speechSynthesis.cancel();
 
 
-        const unlock =
+        const utterance =
             new SpeechSynthesisUtterance(
-                "Engineer audio enabled."
+                String(text)
             );
 
 
-        unlock.volume = 1;
-        unlock.rate = 1;
-        unlock.pitch = 1;
+        utterance.volume = 1;
 
+        utterance.rate = 1.05;
 
-        unlock.onstart = () => {
-
-            audioEnabled = true;
-
-            enableAudioBtn.textContent =
-                "ENGINEER AUDIO ENABLED";
-
-            enableAudioBtn.disabled =
-                true;
-
-            statusEl.textContent =
-                "AUDIO READY";
-        };
-
-
-        unlock.onerror = error => {
-
-            console.error(
-                "Speech error:",
-                error
-            );
-
-            audioEnabled = false;
-
-            enableAudioBtn.textContent =
-                "ENABLE ENGINEER AUDIO";
-        };
+        utterance.pitch = 1;
 
 
         speechSynthesis.speak(
-            unlock
+            utterance
         );
-
 
     } catch (error) {
 
         console.error(
-            "Audio unlock failed:",
+            "Speech failed:",
             error
         );
     }
 }
-
-
-enableAudioBtn.addEventListener(
-    "click",
-    enableEngineerAudio
-);
-
-
-// =====================================================
-// SPEECH
-// =====================================================
-
-function speak(text) {
-
-    if (!audioEnabled) {
-        return;
-    }
 
 
     if (

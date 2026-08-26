@@ -1,126 +1,472 @@
+// =====================================================
+// RACING ENGINEER V5.1
+// VOICE RECORDING SYSTEM
+// =====================================================
+
 "use strict";
 
 
 // =====================================================
-// RACING ENGINEER V5
+// SETTINGS
 // =====================================================
 
-let running = false;
-let paused = false;
-
-let lapStart = 0;
-let pauseStart = 0;
-let pausedTime = 0;
-
-let animationFrame = null;
-
-let lapNumber = 0;
-let bestLap = null;
-
-let triggeredNotes = new Set();
-
-let activeFilter = "all";
-
-let audioEnabled = false;
-
-
-// =====================================================
-// ELEMENTS
-// =====================================================
-
-const trackSelect = document.getElementById("trackSelect");
-const startBtn = document.getElementById("startBtn");
-const pauseBtn = document.getElementById("pauseBtn");
-const stopBtn = document.getElementById("stopBtn");
-const speakBtn = document.getElementById("speakBtn");
-const enableAudioBtn = document.getElementById("enableAudioBtn");
-const addNoteBtn = document.getElementById("addNoteBtn");
-
-const currentLapEl = document.getElementById("currentLap");
-const deltaEl = document.getElementById("delta");
-const bestLapEl = document.getElementById("bestLap");
-
-const statusEl = document.getElementById("status");
-const callEl = document.getElementById("call");
-const subCallEl = document.getElementById("subCall");
-
-const notesList = document.getElementById("notesList");
-const editingTrack = document.getElementById("editingTrack");
-
-const timingMode = document.getElementById("timingMode");
-
-const timeLog = document.getElementById("timeLog");
-
-const minutesEl = document.getElementById("minutes");
-const secondsEl = document.getElementById("seconds");
-const millisecondsEl = document.getElementById("milliseconds");
-
-const clearLog = document.getElementById("clearLog");
+const VOICE_DB_NAME = "RacingEngineerVoiceDB";
+const VOICE_STORE_NAME = "recordings";
 
 
 // =====================================================
 // DATABASE
 // =====================================================
 
-const STORAGE_KEY = "racingEngineerV5";
-
-function loadDatabase() {
-
-    try {
-
-        const saved =
-            localStorage.getItem(STORAGE_KEY);
-
-        if (saved) {
-            return JSON.parse(saved);
-        }
-
-    } catch (error) {
-
-        console.error("Database load error:", error);
-    }
+let voiceDB = null;
 
 
-    if (typeof TRACKS !== "undefined") {
+function openVoiceDatabase() {
 
-        const copy =
-            JSON.parse(JSON.stringify(TRACKS));
+    return new Promise((resolve, reject) => {
 
-        try {
-            localStorage.setItem(
-                STORAGE_KEY,
-                JSON.stringify(copy)
+        const request =
+            indexedDB.open(
+                VOICE_DB_NAME,
+                1
             );
-        } catch (error) {
-            console.error(error);
-        }
-
-        return copy;
-    }
 
 
-    return {};
+        request.onupgradeneeded = function(event) {
+
+            const db =
+                event.target.result;
+
+
+            if (!db.objectStoreNames.contains(
+                VOICE_STORE_NAME
+            )) {
+
+                db.createObjectStore(
+                    VOICE_STORE_NAME
+                );
+            }
+        };
+
+
+        request.onsuccess = function(event) {
+
+            voiceDB =
+                event.target.result;
+
+            resolve(voiceDB);
+        };
+
+
+        request.onerror = function() {
+
+            reject(
+                request.error
+            );
+        };
+
+    });
 }
 
 
-let database = loadDatabase();
+// =====================================================
+// SAVE RECORDING
+// =====================================================
 
-window.database = database;
+function saveVoiceRecording(
+    noteId,
+    blob
+) {
+
+    return new Promise((resolve, reject) => {
+
+        const transaction =
+            voiceDB.transaction(
+                VOICE_STORE_NAME,
+                "readwrite"
+            );
 
 
-function saveDatabase() {
+        const store =
+            transaction.objectStore(
+                VOICE_STORE_NAME
+            );
+
+
+        const request =
+            store.put(
+                blob,
+                String(noteId)
+            );
+
+
+        request.onsuccess =
+            () => resolve();
+
+
+        request.onerror =
+            () => reject(request.error);
+
+    });
+}
+
+
+// =====================================================
+// GET RECORDING
+// =====================================================
+
+function getVoiceRecording(
+    noteId
+) {
+
+    return new Promise((resolve, reject) => {
+
+        const transaction =
+            voiceDB.transaction(
+                VOICE_STORE_NAME,
+                "readonly"
+            );
+
+
+        const store =
+            transaction.objectStore(
+                VOICE_STORE_NAME
+            );
+
+
+        const request =
+            store.get(
+                String(noteId)
+            );
+
+
+        request.onsuccess =
+            () => resolve(request.result);
+
+
+        request.onerror =
+            () => reject(request.error);
+
+    });
+}
+
+
+// =====================================================
+// DELETE RECORDING
+// =====================================================
+
+function deleteVoiceRecording(
+    noteId
+) {
+
+    return new Promise((resolve, reject) => {
+
+        const transaction =
+            voiceDB.transaction(
+                VOICE_STORE_NAME,
+                "readwrite"
+            );
+
+
+        const store =
+            transaction.objectStore(
+                VOICE_STORE_NAME
+            );
+
+
+        const request =
+            store.delete(
+                String(noteId)
+            );
+
+
+        request.onsuccess =
+            () => resolve();
+
+
+        request.onerror =
+            () => reject(request.error);
+
+    });
+}
+
+
+// =====================================================
+// RECORDER
+// =====================================================
+
+const activeRecorders =
+    new Map();
+
+
+async function startRecording(
+    note,
+    card
+) {
+
+    if (
+        !navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia
+    ) {
+
+        alert(
+            "Microphone recording is not supported in this browser."
+        );
+
+        return;
+    }
+
 
     try {
 
-        localStorage.setItem(
-            STORAGE_KEY,
-            JSON.stringify(database)
+        const stream =
+            await navigator.mediaDevices.getUserMedia({
+                audio: true
+            });
+
+
+        const recorder =
+            new MediaRecorder(stream);
+
+
+        const chunks = [];
+
+
+        recorder.ondataavailable =
+            function(event) {
+
+                if (event.data.size > 0) {
+
+                    chunks.push(
+                        event.data
+                    );
+                }
+            };
+
+
+        recorder.onstop =
+            async function() {
+
+                stream
+                    .getTracks()
+                    .forEach(
+                        track =>
+                            track.stop()
+                    );
+
+
+                const blob =
+                    new Blob(
+                        chunks,
+                        {
+                            type:
+                                recorder.mimeType ||
+                                "audio/webm"
+                        }
+                    );
+
+
+                try {
+
+                    await saveVoiceRecording(
+                        note.id,
+                        blob
+                    );
+
+
+                    updateVoiceControls(
+                        note,
+                        card
+                    );
+
+
+                } catch (error) {
+
+                    console.error(
+                        "Could not save recording:",
+                        error
+                    );
+
+                    alert(
+                        "Could not save the recording."
+                    );
+                }
+
+            };
+
+
+        activeRecorders.set(
+            String(note.id),
+            recorder
         );
+
+
+        recorder.start();
+
+
+        const recordButton =
+            card.querySelector(
+                ".voiceRecord"
+            );
+
+
+        const stopButton =
+            card.querySelector(
+                ".voiceStop"
+            );
+
+
+        if (recordButton) {
+
+            recordButton.disabled =
+                true;
+
+            recordButton.textContent =
+                "● RECORDING...";
+        }
+
+
+        if (stopButton) {
+
+            stopButton.disabled =
+                false;
+        }
+
 
     } catch (error) {
 
         console.error(
-            "Database save error:",
+            "Microphone error:",
+            error
+        );
+
+
+        alert(
+            "Microphone permission was denied or unavailable."
+        );
+    }
+}
+
+
+// =====================================================
+// STOP RECORDING
+// =====================================================
+
+function stopRecording(
+    note,
+    card
+) {
+
+    const recorder =
+        activeRecorders.get(
+            String(note.id)
+        );
+
+
+    if (!recorder) {
+        return;
+    }
+
+
+    if (
+        recorder.state !==
+        "inactive"
+    ) {
+
+        recorder.stop();
+    }
+
+
+    activeRecorders.delete(
+        String(note.id)
+    );
+
+
+    const recordButton =
+        card.querySelector(
+            ".voiceRecord"
+        );
+
+
+    const stopButton =
+        card.querySelector(
+            ".voiceStop"
+        );
+
+
+    if (recordButton) {
+
+        recordButton.disabled =
+            false;
+
+        recordButton.textContent =
+            "🎙 RECORD";
+    }
+
+
+    if (stopButton) {
+
+        stopButton.disabled =
+            true;
+    }
+}
+
+
+// =====================================================
+// PLAY RECORDING
+// =====================================================
+
+async function playVoiceRecording(
+    note
+) {
+
+    try {
+
+        const blob =
+            await getVoiceRecording(
+                note.id
+            );
+
+
+        if (!blob) {
+
+            alert(
+                "This note does not have a recording yet."
+            );
+
+            return;
+        }
+
+
+        const url =
+            URL.createObjectURL(
+                blob
+            );
+
+
+        const audio =
+            new Audio(url);
+
+
+        audio.volume = 1;
+
+
+        audio.onended =
+            function() {
+
+                URL.revokeObjectURL(
+                    url
+                );
+            };
+
+
+        await audio.play();
+
+
+    } catch (error) {
+
+        console.error(
+            "Voice playback failed:",
             error
         );
     }
@@ -128,1144 +474,547 @@ function saveDatabase() {
 
 
 // =====================================================
-// DISPLAY
+// CLEAR RECORDING
 // =====================================================
 
-function engineerCall(main, detail = "") {
+async function clearVoiceRecording(
+    note,
+    card
+) {
 
-    if (callEl) {
-        callEl.textContent = main;
+    try {
+
+        await deleteVoiceRecording(
+            note.id
+        );
+
+
+        updateVoiceControls(
+            note,
+            card
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Could not delete recording:",
+            error
+        );
     }
-
-    if (subCallEl) {
-        subCallEl.textContent = detail;
-    }
 }
 
 
 // =====================================================
-// TRACKS
+// CREATE VOICE CONTROLS
 // =====================================================
 
-function populateTracks() {
+function createVoiceControls(
+    note
+) {
 
-    if (!trackSelect) return;
-
-    trackSelect.innerHTML = "";
-
-    Object.keys(database).forEach(key => {
-
-        const option =
-            document.createElement("option");
-
-        option.value = key;
-        option.textContent =
-            database[key].name || key;
-
-        trackSelect.appendChild(option);
-    });
-}
-
-
-// =====================================================
-// TIME
-// =====================================================
-
-function getTargetTime() {
-
-    const minutes =
-        Number(minutesEl?.value) || 0;
-
-    const seconds =
-        Math.max(
-            0,
-            Math.min(
-                59,
-                Number(secondsEl?.value) || 0
-            )
+    const container =
+        document.createElement(
+            "div"
         );
 
-    const milliseconds =
-        Math.max(
-            0,
-            Math.min(
-                999,
-                Number(millisecondsEl?.value) || 0
-            )
+
+    container.className =
+        "voiceControls";
+
+
+    container.style.marginTop =
+        "10px";
+
+
+    container.style.display =
+        "flex";
+
+
+    container.style.flexWrap =
+        "wrap";
+
+
+    container.style.gap =
+        "8px";
+
+
+    container.innerHTML = `
+
+        <button
+            class="voiceRecord"
+            type="button">
+            🎙 RECORD
+        </button>
+
+        <button
+            class="voiceStop"
+            type="button"
+            disabled>
+            ⏹ STOP
+        </button>
+
+        <button
+            class="voicePlay"
+            type="button">
+            ▶ PLAY
+        </button>
+
+        <button
+            class="voiceClear"
+            type="button">
+            🗑 CLEAR VOICE
+        </button>
+
+        <span
+            class="voiceStatus"
+            style="padding:8px;">
+            No recording
+        </span>
+
+    `;
+
+
+    return container;
+}
+
+
+// =====================================================
+// UPDATE VOICE STATUS
+// =====================================================
+
+async function updateVoiceControls(
+    note,
+    card
+) {
+
+    const status =
+        card.querySelector(
+            ".voiceStatus"
         );
 
-    return (
-        minutes * 60000 +
-        seconds * 1000 +
-        milliseconds
-    );
-}
 
-
-function formatTime(ms) {
-
-    if (!Number.isFinite(ms)) {
-        return "--:--.---";
-    }
-
-    ms = Math.max(0, Math.floor(ms));
-
-    const minutes =
-        Math.floor(ms / 60000);
-
-    const seconds =
-        Math.floor((ms % 60000) / 1000);
-
-    const milliseconds =
-        ms % 1000;
-
-    return (
-        minutes +
-        ":" +
-        String(seconds).padStart(2, "0") +
-        "." +
-        String(milliseconds).padStart(3, "0")
-    );
-}
-
-
-function formatDelta(ms) {
-
-    const sign = ms >= 0 ? "+" : "-";
-
-    return (
-        sign +
-        formatTime(Math.abs(ms))
-    );
-}
-
-
-// =====================================================
-// AUDIO
-// =====================================================
-
-function enableEngineerAudio() {
-
-    if (!("speechSynthesis" in window)) {
-
-        engineerCall(
-            "AUDIO UNAVAILABLE",
-            "Speech synthesis is not supported."
+    const playButton =
+        card.querySelector(
+            ".voicePlay"
         );
 
-        return;
-    }
 
-
-    audioEnabled = true;
-
-    enableAudioBtn.textContent =
-        "ENGINEER AUDIO ENABLED";
-
-    enableAudioBtn.disabled = true;
-
-    statusEl.textContent =
-        "AUDIO READY";
-
-
-    const voice =
-        new SpeechSynthesisUtterance(
-            "Engineer audio enabled."
+    const clearButton =
+        card.querySelector(
+            ".voiceClear"
         );
 
-    voice.volume = 1;
-    voice.rate = 1;
-    voice.pitch = 1;
 
-    speechSynthesis.cancel();
-    speechSynthesis.speak(voice);
-}
+    try {
 
-
-function speak(text) {
-
-    if (!audioEnabled) return;
-
-    if (!("speechSynthesis" in window)) return;
-
-    speechSynthesis.cancel();
-
-    const voice =
-        new SpeechSynthesisUtterance(
-            String(text)
-        );
-
-    voice.volume = 1;
-    voice.rate = 1.05;
-    voice.pitch = 1;
-
-    speechSynthesis.speak(voice);
-}
-
-
-// =====================================================
-// START LAP
-// =====================================================
-
-function startLap() {
-
-    if (running) return;
-
-
-    const track =
-        database[trackSelect.value];
-
-
-    if (!track) {
-
-        engineerCall(
-            "SELECT TRACK",
-            "Choose a track first."
-        );
-
-        return;
-    }
-
-
-    running = true;
-    paused = false;
-
-    pausedTime = 0;
-    pauseStart = 0;
-
-    triggeredNotes = new Set();
-
-    lapNumber++;
-
-
-    lapStart =
-        performance.now();
-
-
-    statusEl.textContent =
-        "PUSH LAP";
-
-
-    startBtn.textContent =
-        "LAP RUNNING";
-
-    startBtn.disabled = true;
-
-    pauseBtn.disabled = false;
-
-
-    engineerCall(
-        "PUSH LAP",
-        track.name +
-        " — Target " +
-        formatTime(getTargetTime())
-    );
-
-
-    animationFrame =
-        requestAnimationFrame(updateTimer);
-}
-
-
-// =====================================================
-// TIMER
-// =====================================================
-
-function updateTimer() {
-
-    if (!running) return;
-
-
-    if (!paused) {
-
-        const elapsed =
-            performance.now() -
-            lapStart -
-            pausedTime;
-
-
-        currentLapEl.textContent =
-            formatTime(elapsed);
-
-
-        deltaEl.textContent =
-            formatDelta(
-                elapsed -
-                getTargetTime()
+        const recording =
+            await getVoiceRecording(
+                note.id
             );
 
 
-        triggerNotes(elapsed);
-    }
+        if (recording) {
+
+            if (status) {
+
+                status.textContent =
+                    "🎙 Voice saved";
+            }
 
 
-    animationFrame =
-        requestAnimationFrame(updateTimer);
-}
+            if (playButton) {
+
+                playButton.disabled =
+                    false;
+            }
 
 
-// =====================================================
-// NOTES
-// =====================================================
+            if (clearButton) {
 
-function triggerNotes(elapsed) {
-
-    const track =
-        database[trackSelect.value];
-
-
-    if (!track ||
-        !Array.isArray(track.notes)) {
-
-        return;
-    }
-
-
-    track.notes.forEach(note => {
-
-        if (!note.enabled) return;
-
-        if (triggeredNotes.has(note.id)) {
-            return;
-        }
-
-
-        let triggerTime;
-
-
-        if (
-            timingMode.value ===
-            "percentage"
-        ) {
-
-            triggerTime =
-                getTargetTime() *
-                Number(note.time) /
-                100;
+                clearButton.disabled =
+                    false;
+            }
 
         } else {
 
-            triggerTime =
-                Number(note.time) *
-                1000;
-        }
+            if (status) {
+
+                status.textContent =
+                    "No recording";
+            }
 
 
-        if (elapsed >= triggerTime) {
+            if (playButton) {
 
-            triggeredNotes.add(note.id);
-
-
-            engineerCall(
-                note.call,
-                note.detail
-            );
+                playButton.disabled =
+                    true;
+            }
 
 
-            if (note.voice) {
+            if (clearButton) {
 
-                speak(
-                    note.call +
-                    ". " +
-                    note.detail
-                );
+                clearButton.disabled =
+                    true;
             }
         }
 
-    });
+
+    } catch (error) {
+
+        console.error(
+            "Voice status error:",
+            error
+        );
+    }
 }
 
 
 // =====================================================
-// PAUSE
+// ATTACH CONTROLS TO NOTE CARD
 // =====================================================
 
-function togglePause() {
+async function attachVoiceControls(
+    note,
+    card
+) {
 
-    if (!running) return;
-
-
-    if (!paused) {
-
-        paused = true;
-
-        pauseStart =
-            performance.now();
-
-        pauseBtn.textContent =
-            "RESUME";
-
-        statusEl.textContent =
-            "PAUSED";
+    const existing =
+        card.querySelector(
+            ".voiceControls"
+        );
 
 
-        engineerCall(
-            "PAUSED",
-            "Lap timer stopped."
+    if (existing) {
+        return;
+    }
+
+
+    const controls =
+        createVoiceControls(
+            note
+        );
+
+
+    const actions =
+        card.querySelector(
+            ".noteActions"
+        );
+
+
+    if (actions) {
+
+        actions.before(
+            controls
         );
 
     } else {
 
-        paused = false;
-
-        pausedTime +=
-            performance.now() -
-            pauseStart;
-
-        pauseStart = 0;
-
-        pauseBtn.textContent =
-            "PAUSE";
-
-        statusEl.textContent =
-            "PUSH LAP";
-
-
-        engineerCall(
-            "RESUME",
-            "Back on the push lap."
+        card.appendChild(
+            controls
         );
     }
-}
 
 
-// =====================================================
-// STOP
-// =====================================================
-
-function stopLap() {
-
-    if (!running) return;
+    const recordButton =
+        controls.querySelector(
+            ".voiceRecord"
+        );
 
 
-    const endTime =
-        paused
-            ? pauseStart
-            : performance.now();
+    const stopButton =
+        controls.querySelector(
+            ".voiceStop"
+        );
 
 
-    const elapsed =
-        endTime -
-        lapStart -
-        pausedTime;
+    const playButton =
+        controls.querySelector(
+            ".voicePlay"
+        );
 
 
-    running = false;
-    paused = false;
+    const clearButton =
+        controls.querySelector(
+            ".voiceClear"
+        );
 
 
-    cancelAnimationFrame(
-        animationFrame
+    recordButton.addEventListener(
+        "click",
+        function() {
+
+            startRecording(
+                note,
+                card
+            );
+        }
     );
 
 
-    currentLapEl.textContent =
-        formatTime(elapsed);
+    stopButton.addEventListener(
+        "click",
+        function() {
 
-
-    const delta =
-        elapsed -
-        getTargetTime();
-
-
-    deltaEl.textContent =
-        formatDelta(delta);
-
-
-    const isBest =
-        bestLap === null ||
-        elapsed < bestLap;
-
-
-    if (isBest) {
-
-        bestLap = elapsed;
-
-        bestLapEl.textContent =
-            formatTime(bestLap);
-    }
-
-
-    addLog(
-        lapNumber,
-        elapsed,
-        delta,
-        isBest
+            stopRecording(
+                note,
+                card
+            );
+        }
     );
 
 
-    statusEl.textContent =
-        "READY";
+    playButton.addEventListener(
+        "click",
+        function() {
 
-    startBtn.textContent =
-        "START PUSH LAP";
-
-    startBtn.disabled = false;
-
-    pauseBtn.disabled = true;
-
-    pauseBtn.textContent =
-        "PAUSE";
+            playVoiceRecording(
+                note
+            );
+        }
+    );
 
 
-    engineerCall(
-        "LAP COMPLETE",
-        formatTime(elapsed) +
-        " — " +
-        formatDelta(delta)
+    clearButton.addEventListener(
+        "click",
+        function() {
+
+            clearVoiceRecording(
+                note,
+                card
+            );
+        }
+    );
+
+
+    updateVoiceControls(
+        note,
+        card
     );
 }
 
 
 // =====================================================
-// LOG
+// AUTOMATIC PLAYBACK
 // =====================================================
 
-function addLog(
-    lap,
-    time,
-    delta,
-    isBest
+async function playRecordedVoice(
+    note
 ) {
 
-    const empty =
-        timeLog.querySelector(".empty");
+    try {
 
-    if (empty) {
-        empty.remove();
-    }
-
-
-    const row =
-        document.createElement("div");
-
-    row.className =
-        "logRow";
-
-
-    row.innerHTML = `
-        <span>LAP ${lap}</span>
-        <span>${formatTime(time)}</span>
-        <span>${formatDelta(delta)}</span>
-        <span>${isBest ? "★ BEST" : ""}</span>
-    `;
-
-
-    timeLog.prepend(row);
-}
-
-
-clearLog.addEventListener(
-    "click",
-    function() {
-
-        timeLog.innerHTML = `
-            <div class="empty">
-                No completed laps.
-            </div>
-        `;
-
-        lapNumber = 0;
-        bestLap = null;
-
-        bestLapEl.textContent =
-            "--:--.---";
-    }
-);
-
-
-// =====================================================
-// NOTE EDITOR
-// =====================================================
-
-function escapeHTML(value) {
-
-    return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;");
-}
-
-
-function renderNotes() {
-
-    const track =
-        database[trackSelect.value];
-
-
-    if (!track) return;
-
-
-    editingTrack.textContent =
-        track.name;
-
-
-    notesList.innerHTML = "";
-
-
-    let notes =
-        Array.isArray(track.notes)
-            ? [...track.notes]
-            : [];
-
-
-    if (activeFilter !== "all") {
-
-        notes =
-            notes.filter(
-                note =>
-                    note.type ===
-                    activeFilter
+        const blob =
+            await getVoiceRecording(
+                note.id
             );
+
+
+        if (!blob) {
+
+            return false;
+        }
+
+
+        const url =
+            URL.createObjectURL(
+                blob
+            );
+
+
+        const audio =
+            new Audio(url);
+
+
+        audio.volume = 1;
+
+
+        audio.onended =
+            function() {
+
+                URL.revokeObjectURL(
+                    url
+                );
+            };
+
+
+        await audio.play();
+
+
+        return true;
+
+
+    } catch (error) {
+
+        console.error(
+            "Automatic voice playback failed:",
+            error
+        );
+
+
+        return false;
     }
+}
 
 
-    notes.sort(
-        (a, b) =>
-            Number(a.time) -
-            Number(b.time)
-    );
+// =====================================================
+// HOOK INTO EXISTING ENGINEER
+// =====================================================
 
+function enableRecordedVoiceForNote(
+    note
+) {
 
-    if (!notes.length) {
-
-        notesList.innerHTML = `
-            <div class="empty">
-                No calls match this filter.
-            </div>
-        `;
-
+    if (!note) {
         return;
     }
 
 
-    notes.forEach(
-        note =>
-            createNoteCard(
-                track,
-                note
-            )
+    // The main script will continue
+    // to display the engineer call.
+
+
+    playRecordedVoice(
+        note
     );
 }
 
 
-function createNoteCard(
-    track,
-    note
-) {
+// =====================================================
+// OBSERVE NOTE CARDS
+// =====================================================
 
-    const card =
-        document.createElement("div");
+function scanForNoteCards() {
 
-
-    card.className =
-        "noteCard";
-
-
-    card.innerHTML = `
-
-        <div class="noteTop">
-
-            <div>
-                <label>CORNER</label>
-
-                <input
-                    class="corner"
-                    value="${escapeHTML(note.corner || "")}"
-                >
-            </div>
-
-            <div>
-                <label>TRIGGER</label>
-
-                <input
-                    class="time"
-                    type="number"
-                    step="0.1"
-                    value="${note.time || 0}"
-                >
-            </div>
-
-            <div>
-                <label>TYPE</label>
-
-                <select class="type">
-
-                    ${[
-                        "BRAKE",
-                        "TURN",
-                        "APEX",
-                        "EXIT",
-                        "THROTTLE",
-                        "GEAR",
-                        "DRS",
-                        "ERS",
-                        "LIFT",
-                        "CUSTOM"
-                    ].map(
-                        type => `
-                            <option
-                                value="${type}"
-                                ${note.type === type ? "selected" : ""}
-                            >
-                                ${type}
-                            </option>
-                        `
-                    ).join("")}
-
-                </select>
-            </div>
-
-        </div>
+    const cards =
+        document.querySelectorAll(
+            ".noteCard"
+        );
 
 
-        <div class="noteMiddle">
+    cards.forEach(
+        card => {
 
-            <div>
-                <label>ENGINEER CALL</label>
+            if (
+                card.dataset.voiceReady ===
+                "true"
+            ) {
 
-                <input
-                    class="call"
-                    value="${escapeHTML(note.call || "")}"
-                >
-            </div>
-
-            <div>
-                <label>DETAIL</label>
-
-                <input
-                    class="detail"
-                    value="${escapeHTML(note.detail || "")}"
-                >
-            </div>
-
-            <div>
-                <label>GEAR</label>
-
-                <input
-                    class="gear"
-                    value="${escapeHTML(note.gear || "")}"
-                >
-            </div>
-
-        </div>
-
-
-        <div class="noteBottom">
-
-            <div>
-
-                <label>ENABLED</label>
-
-                <select class="enabled">
-
-                    <option
-                        value="true"
-                        ${note.enabled ? "selected" : ""}
-                    >
-                        ON
-                    </option>
-
-                    <option
-                        value="false"
-                        ${!note.enabled ? "selected" : ""}
-                    >
-                        OFF
-                    </option>
-
-                </select>
-
-            </div>
-
-
-            <div>
-
-                <label>VOICE</label>
-
-                <select class="voice">
-
-                    <option
-                        value="true"
-                        ${note.voice ? "selected" : ""}
-                    >
-                        ON
-                    </option>
-
-                    <option
-                        value="false"
-                        ${!note.voice ? "selected" : ""}
-                    >
-                        OFF
-                    </option>
-
-                </select>
-
-            </div>
-
-        </div>
-
-
-        <div class="noteActions">
-
-            <button class="test">
-                TEST
-            </button>
-
-            <button class="save primary">
-                SAVE
-            </button>
-
-            <button class="deleteNote">
-                DELETE
-            </button>
-
-        </div>
-    `;
-
-
-    const get =
-        selector =>
-            card.querySelector(selector);
-
-
-    get(".test").addEventListener(
-        "click",
-        function() {
-
-            engineerCall(
-                note.call,
-                note.detail
-            );
-
-            if (audioEnabled) {
-
-                speak(
-                    note.call +
-                    ". " +
-                    note.detail
-                );
+                return;
             }
-        }
-    );
 
 
-    get(".save").addEventListener(
-        "click",
-        function() {
-
-            note.corner =
-                get(".corner").value;
-
-            note.time =
-                Number(
-                    get(".time").value
-                ) || 0;
-
-            note.type =
-                get(".type").value;
-
-            note.call =
-                get(".call").value;
-
-            note.detail =
-                get(".detail").value;
-
-            note.gear =
-                get(".gear").value;
-
-            note.enabled =
-                get(".enabled").value ===
-                "true";
-
-            note.voice =
-                get(".voice").value ===
-                "true";
+            const callInput =
+                card.querySelector(
+                    ".call"
+                );
 
 
-            saveDatabase();
+            if (!callInput) {
+                return;
+            }
 
 
-            engineerCall(
-                "CALL SAVED",
-                note.corner +
-                " — " +
-                note.call
-            );
-        }
-    );
+            const trackSelect =
+                document.getElementById(
+                    "trackSelect"
+                );
 
 
-    get(".deleteNote").addEventListener(
-        "click",
-        function() {
+            if (!trackSelect) {
+                return;
+            }
 
-            track.notes =
-                track.notes.filter(
+
+            const track =
+                window.database?.[
+                    trackSelect.value
+                ];
+
+
+            if (!track ||
+                !Array.isArray(track.notes)) {
+
+                return;
+            }
+
+
+            const note =
+                track.notes.find(
                     item =>
-                        item.id !== note.id
+                        item.call ===
+                        callInput.value
                 );
 
 
-            saveDatabase();
-
-            renderNotes();
-        }
-    );
-
-
-    notesList.appendChild(card);
-}
-
-
-// =====================================================
-// ADD CALL
-// =====================================================
-
-addNoteBtn.addEventListener(
-    "click",
-    function() {
-
-        const track =
-            database[trackSelect.value];
-
-
-        if (!track) return;
-
-
-        if (!Array.isArray(track.notes)) {
-            track.notes = [];
-        }
-
-
-        track.notes.push({
-
-            id:
-                Date.now().toString(),
-
-            corner:
-                "T1",
-
-            type:
-                "CUSTOM",
-
-            time:
-                10,
-
-            call:
-                "CUSTOM CALL",
-
-            detail:
-                "Your note",
-
-            gear:
-                "3",
-
-            enabled:
-                true,
-
-            voice:
-                true
-        });
-
-
-        saveDatabase();
-
-        renderNotes();
-    }
-);
-
-
-// =====================================================
-// FILTERS
-// =====================================================
-
-document
-    .querySelectorAll(".filter")
-    .forEach(
-        button => {
-
-            button.addEventListener(
-                "click",
-                function() {
-
-                    activeFilter =
-                        button.dataset.filter;
-
-                    document
-                        .querySelectorAll(".filter")
-                        .forEach(
-                            b =>
-                                b.classList.toggle(
-                                    "active",
-                                    b === button
-                                )
-                        );
-
-                    renderNotes();
-                }
-            );
-        }
-    );
-
-
-// =====================================================
-// TRACK CHANGE
-// =====================================================
-
-trackSelect.addEventListener(
-    "change",
-    function() {
-
-        if (running) return;
-
-        activeFilter = "all";
-
-        renderNotes();
-
-
-        const track =
-            database[
-                trackSelect.value
-            ];
-
-
-        if (track) {
-
-            engineerCall(
-                track.name,
-                "Track selected. Push lap ready."
-            );
-        }
-    }
-);
-
-
-// =====================================================
-// AUDIO BUTTONS
-// =====================================================
-
-enableAudioBtn.addEventListener(
-    "click",
-    enableEngineerAudio
-);
-
-
-speakBtn.addEventListener(
-    "click",
-    function() {
-
-        if (!audioEnabled) {
-
-            engineerCall(
-                "ENABLE AUDIO FIRST",
-                "Press Enable Engineer Audio."
-            );
-
-            return;
-        }
-
-
-        engineerCall(
-            "ENGINEER TEST",
-            "Audio system is working."
-        );
-
-
-        speak(
-            "Engineer test. Audio system is working."
-        );
-    }
-);
-
-
-// =====================================================
-// MAIN BUTTONS
-// =====================================================
-
-startBtn.addEventListener(
-    "click",
-    startLap
-);
-
-
-pauseBtn.addEventListener(
-    "click",
-    togglePause
-);
-
-
-stopBtn.addEventListener(
-    "click",
-    stopLap
-);
-
-
-// =====================================================
-// TARGET TIME
-// =====================================================
-
-[
-    minutesEl,
-    secondsEl,
-    millisecondsEl
-]
-.forEach(
-    input => {
-
-        input.addEventListener(
-            "change",
-            function() {
-
-                if (!running) {
-
-                    engineerCall(
-                        "TARGET UPDATED",
-                        "Target " +
-                        formatTime(
-                            getTargetTime()
-                        )
-                    );
-                }
+            if (!note) {
+                return;
             }
-        );
-    }
-);
 
 
-// =====================================================
-// TIMING MODE
-// =====================================================
+            attachVoiceControls(
+                note,
+                card
+            );
 
-timingMode.addEventListener(
-    "change",
-    function() {
 
-        engineerCall(
-            "TIMING MODE",
-            timingMode.options[
-                timingMode.selectedIndex
-            ].text
-        );
-    }
-);
+            card.dataset.voiceReady =
+                "true";
+        }
+    );
+}
 
 
 // =====================================================
 // STARTUP
 // =====================================================
 
-populateTracks();
+async function initializeVoiceSystem() {
 
-renderNotes();
+    try {
 
-pauseBtn.disabled = true;
+        await openVoiceDatabase();
 
-engineerCall(
-    "PUSH LAP READY",
-    "Select a track and set your target."
-);
+        console.log(
+            "Voice database ready."
+        );
 
-console.log(
-    "Racing Engineer V5 loaded successfully."
-);
+
+        scanForNoteCards();
+
+
+        setInterval(
+            scanForNoteCards,
+            500
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Voice system failed to initialize:",
+            error
+        );
+    }
+}
+
+
+// =====================================================
+// GLOBAL API
+// =====================================================
+
+window.playRecordedVoice =
+    playRecordedVoice;
+
+window.enableRecordedVoiceForNote =
+    enableRecordedVoiceForNote;
+
+window.scanForNoteCards =
+    scanForNoteCards;
+
+
+// =====================================================
+// RUN
+// =====================================================
+
+initializeVoiceSystem();

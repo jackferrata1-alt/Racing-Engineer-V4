@@ -1,5 +1,6 @@
 // =====================================================
-// RACING ENGINEER V4.3 — STABLE LAP ENGINE
+// RACING ENGINEER V4.4
+// QUEST AUDIO + LAP ENGINE
 // =====================================================
 
 let running = false;
@@ -18,42 +19,281 @@ let triggeredNotes = new Set();
 
 let activeFilter = "all";
 
-const STORAGE_KEY = "racingEngineerV43";
+let audioEnabled = false;
+
+const STORAGE_KEY = "racingEngineerV44";
 
 
 // =====================================================
 // ELEMENTS
 // =====================================================
 
-const trackSelect = document.getElementById("trackSelect");
+const trackSelect =
+    document.getElementById("trackSelect");
 
-const startBtn = document.getElementById("startBtn");
-const pauseBtn = document.getElementById("pauseBtn");
-const stopBtn = document.getElementById("stopBtn");
-const speakBtn = document.getElementById("speakBtn");
+const startBtn =
+    document.getElementById("startBtn");
 
-const addNoteBtn = document.getElementById("addNoteBtn");
+const pauseBtn =
+    document.getElementById("pauseBtn");
 
-const currentLapEl = document.getElementById("currentLap");
-const deltaEl = document.getElementById("delta");
-const bestLapEl = document.getElementById("bestLap");
+const stopBtn =
+    document.getElementById("stopBtn");
 
-const statusEl = document.getElementById("status");
+const speakBtn =
+    document.getElementById("speakBtn");
 
-const callEl = document.getElementById("call");
-const subCallEl = document.getElementById("subCall");
+const addNoteBtn =
+    document.getElementById("addNoteBtn");
 
-const notesList = document.getElementById("notesList");
+const currentLapEl =
+    document.getElementById("currentLap");
 
-const editingTrack = document.getElementById("editingTrack");
+const deltaEl =
+    document.getElementById("delta");
 
-const timingMode = document.getElementById("timingMode");
+const bestLapEl =
+    document.getElementById("bestLap");
 
-const timeLog = document.getElementById("timeLog");
+const statusEl =
+    document.getElementById("status");
 
-const minutesEl = document.getElementById("minutes");
-const secondsEl = document.getElementById("seconds");
-const millisecondsEl = document.getElementById("milliseconds");
+const callEl =
+    document.getElementById("call");
+
+const subCallEl =
+    document.getElementById("subCall");
+
+const notesList =
+    document.getElementById("notesList");
+
+const editingTrack =
+    document.getElementById("editingTrack");
+
+const timingMode =
+    document.getElementById("timingMode");
+
+const timeLog =
+    document.getElementById("timeLog");
+
+const minutesEl =
+    document.getElementById("minutes");
+
+const secondsEl =
+    document.getElementById("seconds");
+
+const millisecondsEl =
+    document.getElementById("milliseconds");
+
+
+// =====================================================
+// QUEST AUDIO BUTTON
+// =====================================================
+
+let enableAudioBtn =
+    document.getElementById("enableAudioBtn");
+
+
+if (!enableAudioBtn) {
+
+    enableAudioBtn =
+        document.createElement("button");
+
+    enableAudioBtn.id =
+        "enableAudioBtn";
+
+    enableAudioBtn.textContent =
+        "ENABLE ENGINEER AUDIO";
+
+    enableAudioBtn.className =
+        "primary";
+
+    const buttons =
+        document.querySelector(".buttons");
+
+    if (buttons) {
+
+        buttons.appendChild(
+            enableAudioBtn
+        );
+    }
+}
+
+
+// =====================================================
+// AUDIO UNLOCK
+// =====================================================
+
+function enableEngineerAudio() {
+
+    if (
+        !("speechSynthesis" in window)
+    ) {
+
+        alert(
+            "Speech synthesis is not available in this Quest browser."
+        );
+
+        statusEl.textContent =
+            "AUDIO UNAVAILABLE";
+
+        return;
+    }
+
+
+    try {
+
+        speechSynthesis.cancel();
+
+
+        const unlock =
+            new SpeechSynthesisUtterance(
+                "Engineer audio enabled."
+            );
+
+
+        unlock.volume = 1;
+        unlock.rate = 1;
+        unlock.pitch = 1;
+
+
+        unlock.onstart = () => {
+
+            audioEnabled = true;
+
+            enableAudioBtn.textContent =
+                "ENGINEER AUDIO ENABLED";
+
+            enableAudioBtn.disabled =
+                true;
+
+            statusEl.textContent =
+                "AUDIO READY";
+        };
+
+
+        unlock.onerror = error => {
+
+            console.error(
+                "Speech error:",
+                error
+            );
+
+            audioEnabled = false;
+
+            enableAudioBtn.textContent =
+                "ENABLE ENGINEER AUDIO";
+        };
+
+
+        speechSynthesis.speak(
+            unlock
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Audio unlock failed:",
+            error
+        );
+    }
+}
+
+
+enableAudioBtn.addEventListener(
+    "click",
+    enableEngineerAudio
+);
+
+
+// =====================================================
+// SPEECH
+// =====================================================
+
+function speak(text) {
+
+    if (!audioEnabled) {
+        return;
+    }
+
+
+    if (
+        !("speechSynthesis" in window)
+    ) {
+        return;
+    }
+
+
+    try {
+
+        speechSynthesis.cancel();
+
+
+        const utterance =
+            new SpeechSynthesisUtterance(
+                String(text)
+            );
+
+
+        utterance.volume =
+            1;
+
+        utterance.rate =
+            1.05;
+
+        utterance.pitch =
+            1;
+
+
+        speechSynthesis.speak(
+            utterance
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Speech failed:",
+            error
+        );
+    }
+}
+
+
+// =====================================================
+// ENGINEER DISPLAY
+// =====================================================
+
+function engineerCall(
+    main,
+    detail = "",
+    voice = false
+) {
+
+    if (callEl) {
+
+        callEl.textContent =
+            main;
+    }
+
+
+    if (subCallEl) {
+
+        subCallEl.textContent =
+            detail;
+    }
+
+
+    if (voice) {
+
+        speak(
+            main +
+            ". " +
+            detail
+        );
+    }
+}
 
 
 // =====================================================
@@ -65,35 +305,55 @@ function loadDatabase() {
     try {
 
         const saved =
-            localStorage.getItem(STORAGE_KEY);
+            localStorage.getItem(
+                STORAGE_KEY
+            );
+
 
         if (saved) {
-            return JSON.parse(saved);
+
+            return JSON.parse(
+                saved
+            );
         }
 
     } catch (error) {
 
         console.error(
-            "Database loading error:",
+            "Database load error:",
             error
         );
     }
+
 
     const copy =
         JSON.parse(
             JSON.stringify(TRACKS)
         );
 
-    localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(copy)
-    );
+
+    try {
+
+        localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify(copy)
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Database save error:",
+            error
+        );
+    }
+
 
     return copy;
 }
 
 
-let database = loadDatabase();
+let database =
+    loadDatabase();
 
 
 function saveDatabase() {
@@ -116,27 +376,43 @@ function saveDatabase() {
 
 
 // =====================================================
-// TRACKS
+// TRACK SELECTOR
 // =====================================================
 
 function populateTracks() {
 
-    trackSelect.innerHTML = "";
+    if (!trackSelect) {
+        return;
+    }
 
-    Object.keys(database).forEach(
-        key => {
 
-            const option =
-                document.createElement("option");
+    trackSelect.innerHTML =
+        "";
 
-            option.value = key;
 
-            option.textContent =
-                database[key].name;
+    Object.keys(database)
+        .forEach(
+            key => {
 
-            trackSelect.appendChild(option);
-        }
-    );
+                const option =
+                    document.createElement(
+                        "option"
+                    );
+
+
+                option.value =
+                    key;
+
+
+                option.textContent =
+                    database[key].name;
+
+
+                trackSelect.appendChild(
+                    option
+                );
+            }
+        );
 }
 
 
@@ -147,25 +423,34 @@ function populateTracks() {
 function getTargetTime() {
 
     const minutes =
-        Number(minutesEl.value) || 0;
+        Number(
+            minutesEl?.value
+        ) || 0;
+
 
     const seconds =
         Math.max(
             0,
             Math.min(
                 59,
-                Number(secondsEl.value) || 0
+                Number(
+                    secondsEl?.value
+                ) || 0
             )
         );
+
 
     const milliseconds =
         Math.max(
             0,
             Math.min(
                 999,
-                Number(millisecondsEl.value) || 0
+                Number(
+                    millisecondsEl?.value
+                ) || 0
             )
         );
+
 
     return (
         minutes * 60000 +
@@ -176,37 +461,50 @@ function getTargetTime() {
 
 
 // =====================================================
-// TIME FORMAT
+// FORMAT TIME
 // =====================================================
 
 function formatTime(ms) {
 
-    if (!Number.isFinite(ms)) {
+    if (
+        !Number.isFinite(ms)
+    ) {
+
         return "--:--.---";
     }
 
-    ms = Math.max(
-        0,
-        Math.floor(ms)
-    );
+
+    ms =
+        Math.max(
+            0,
+            Math.floor(ms)
+        );
+
 
     const minutes =
-        Math.floor(ms / 60000);
+        Math.floor(
+            ms / 60000
+        );
+
 
     const seconds =
         Math.floor(
             (ms % 60000) / 1000
         );
 
+
     const milliseconds =
         ms % 1000;
+
 
     return (
         minutes +
         ":" +
-        String(seconds).padStart(2, "0") +
+        String(seconds)
+            .padStart(2, "0") +
         "." +
-        String(milliseconds).padStart(3, "0")
+        String(milliseconds)
+            .padStart(3, "0")
     );
 }
 
@@ -214,7 +512,10 @@ function formatTime(ms) {
 function formatDelta(ms) {
 
     const sign =
-        ms >= 0 ? "+" : "-";
+        ms >= 0
+            ? "+"
+            : "-";
+
 
     return (
         sign +
@@ -226,87 +527,33 @@ function formatDelta(ms) {
 
 
 // =====================================================
-// SPEECH
-// =====================================================
-
-function speak(text) {
-
-    if (
-        !window.speechSynthesis
-    ) {
-        return;
-    }
-
-    window.speechSynthesis.cancel();
-
-    const utterance =
-        new SpeechSynthesisUtterance(
-            String(text)
-        );
-
-    utterance.rate = 1.05;
-    utterance.pitch = 1;
-    utterance.volume = 1;
-
-    window.speechSynthesis.speak(
-        utterance
-    );
-}
-
-
-function engineerCall(
-    main,
-    detail = "",
-    voice = false
-) {
-
-    callEl.textContent =
-        main;
-
-    subCallEl.textContent =
-        detail;
-
-    if (voice) {
-
-        speak(
-            main +
-            ". " +
-            detail
-        );
-    }
-}
-
-
-// =====================================================
 // START LAP
 // =====================================================
 
 function startLap() {
 
     console.log(
-        "START BUTTON PRESSED"
+        "START PUSH LAP"
     );
 
+
     if (running) {
-
-        console.log(
-            "Lap already running"
-        );
-
         return;
     }
 
 
-    // Make sure a track exists.
+    const selectedTrack =
+        trackSelect?.value;
+
 
     if (
-        !trackSelect.value ||
-        !database[trackSelect.value]
+        !selectedTrack ||
+        !database[selectedTrack]
     ) {
 
         engineerCall(
             "SELECT TRACK",
-            "Choose a track before starting.",
+            "Choose a track first.",
             true
         );
 
@@ -314,47 +561,46 @@ function startLap() {
     }
 
 
-    // Reset lap state.
+    running =
+        true;
 
-    running = true;
+    paused =
+        false;
 
-    paused = false;
+    pausedTime =
+        0;
 
-    pausedTime = 0;
+    pauseStart =
+        0;
 
-    pauseStart = 0;
-
-    triggeredNotes = new Set();
+    triggeredNotes =
+        new Set();
 
     lapNumber++;
 
-
-    // IMPORTANT:
-    // Use performance.now() for a reliable timer.
 
     lapStart =
         performance.now();
 
 
-    // Update interface.
-
     statusEl.textContent =
         "PUSH LAP";
+
 
     startBtn.textContent =
         "LAP RUNNING";
 
+
     startBtn.disabled =
         true;
+
 
     pauseBtn.disabled =
         false;
 
 
     const track =
-        database[
-            trackSelect.value
-        ];
+        database[selectedTrack];
 
 
     engineerCall(
@@ -368,11 +614,10 @@ function startLap() {
     );
 
 
-    // Start the animation loop.
-
     cancelAnimationFrame(
         animationFrame
     );
+
 
     animationFrame =
         requestAnimationFrame(
@@ -427,10 +672,12 @@ function updateTimer() {
 
 
 // =====================================================
-// TRIGGER NOTES
+// NOTE TRIGGERING
 // =====================================================
 
-function triggerNotes(elapsed) {
+function triggerNotes(
+    elapsed
+) {
 
     const track =
         database[
@@ -438,12 +685,13 @@ function triggerNotes(elapsed) {
         ];
 
 
-    if (!track) {
-        return;
-    }
+    if (
+        !track ||
+        !Array.isArray(
+            track.notes
+        )
+    ) {
 
-
-    if (!Array.isArray(track.notes)) {
         return;
     }
 
@@ -451,7 +699,10 @@ function triggerNotes(elapsed) {
     track.notes.forEach(
         note => {
 
-            if (!note.enabled) {
+            if (
+                !note.enabled
+            ) {
+
                 return;
             }
 
@@ -461,6 +712,7 @@ function triggerNotes(elapsed) {
                     note.id
                 )
             ) {
+
                 return;
             }
 
@@ -502,7 +754,6 @@ function triggerNotes(elapsed) {
                     note.voice
                 );
             }
-
         }
     );
 }
@@ -521,13 +772,17 @@ function togglePause() {
 
     if (!paused) {
 
-        paused = true;
+        paused =
+            true;
+
 
         pauseStart =
             performance.now();
 
+
         statusEl.textContent =
             "PAUSED";
+
 
         pauseBtn.textContent =
             "RESUME";
@@ -542,16 +797,22 @@ function togglePause() {
 
     } else {
 
-        paused = false;
+        paused =
+            false;
+
 
         pausedTime +=
             performance.now() -
             pauseStart;
 
-        pauseStart = 0;
+
+        pauseStart =
+            0;
+
 
         statusEl.textContent =
             "PUSH LAP";
+
 
         pauseBtn.textContent =
             "PAUSE";
@@ -567,7 +828,7 @@ function togglePause() {
 
 
 // =====================================================
-// STOP LAP
+// STOP
 // =====================================================
 
 function stopLap() {
@@ -598,8 +859,12 @@ function stopLap() {
         pausedTime;
 
 
-    running = false;
-    paused = false;
+    running =
+        false;
+
+
+    paused =
+        false;
 
 
     cancelAnimationFrame(
@@ -634,6 +899,7 @@ function stopLap() {
         bestLap =
             elapsed;
 
+
         bestLapEl.textContent =
             formatTime(
                 bestLap
@@ -652,14 +918,18 @@ function stopLap() {
     statusEl.textContent =
         "READY";
 
+
     startBtn.textContent =
         "START PUSH LAP";
+
 
     startBtn.disabled =
         false;
 
+
     pauseBtn.textContent =
         "PAUSE";
+
 
     pauseBtn.disabled =
         true;
@@ -676,43 +946,6 @@ function stopLap() {
 
 
 // =====================================================
-// BUTTON CONNECTIONS
-// =====================================================
-
-// Explicitly connect the buttons.
-
-startBtn.addEventListener(
-    "click",
-    startLap
-);
-
-
-pauseBtn.addEventListener(
-    "click",
-    togglePause
-);
-
-
-stopBtn.addEventListener(
-    "click",
-    stopLap
-);
-
-
-speakBtn.addEventListener(
-    "click",
-    () => {
-
-        engineerCall(
-            "ENGINEER TEST",
-            "Audio system is working.",
-            true
-        );
-    }
-);
-
-
-// =====================================================
 // TIME LOG
 // =====================================================
 
@@ -722,6 +955,11 @@ function addLog(
     delta,
     isBest
 ) {
+
+    if (!timeLog) {
+        return;
+    }
+
 
     const empty =
         timeLog.querySelector(
@@ -761,6 +999,7 @@ function addLog(
         <span>
             ${isBest ? "★ BEST" : ""}
         </span>
+
     `;
 
 
@@ -774,9 +1013,15 @@ function addLog(
 // CLEAR LOG
 // =====================================================
 
-document
-    .getElementById("clearLog")
-    .addEventListener(
+const clearLog =
+    document.getElementById(
+        "clearLog"
+    );
+
+
+if (clearLog) {
+
+    clearLog.addEventListener(
         "click",
         () => {
 
@@ -786,18 +1031,24 @@ document
                 </div>
             `;
 
-            lapNumber = 0;
 
-            bestLap = null;
+            lapNumber =
+                0;
+
+
+            bestLap =
+                null;
+
 
             bestLapEl.textContent =
                 "--:--.---";
         }
     );
+}
 
 
 // =====================================================
-// EDITOR
+// TRACK EDITOR
 // =====================================================
 
 function renderNotes() {
@@ -817,7 +1068,8 @@ function renderNotes() {
         track.name;
 
 
-    notesList.innerHTML = "";
+    notesList.innerHTML =
+        "";
 
 
     let notes =
@@ -871,6 +1123,10 @@ function renderNotes() {
 }
 
 
+// =====================================================
+// NOTE CARD
+// =====================================================
+
 function createNoteCard(
     track,
     note
@@ -881,6 +1137,7 @@ function createNoteCard(
             "div"
         );
 
+
     card.className =
         "noteCard";
 
@@ -890,15 +1147,19 @@ function createNoteCard(
         <div class="noteTop">
 
             <div>
+
                 <label>CORNER</label>
 
                 <input
                     class="corner"
                     value="${escapeHTML(note.corner)}"
                 >
+
             </div>
 
+
             <div>
+
                 <label>TRIGGER</label>
 
                 <input
@@ -907,9 +1168,12 @@ function createNoteCard(
                     step="0.1"
                     value="${note.time}"
                 >
+
             </div>
 
+
             <div>
+
                 <label>TYPE</label>
 
                 <select class="type">
@@ -930,7 +1194,11 @@ function createNoteCard(
                         type => `
                             <option
                                 value="${type}"
-                                ${note.type === type ? "selected" : ""}
+                                ${
+                                    note.type === type
+                                        ? "selected"
+                                        : ""
+                                }
                             >
                                 ${type}
                             </option>
@@ -939,6 +1207,7 @@ function createNoteCard(
                     .join("")}
 
                 </select>
+
             </div>
 
         </div>
@@ -947,30 +1216,38 @@ function createNoteCard(
         <div class="noteMiddle">
 
             <div>
+
                 <label>ENGINEER CALL</label>
 
                 <input
                     class="call"
                     value="${escapeHTML(note.call)}"
                 >
+
             </div>
 
+
             <div>
+
                 <label>DETAIL</label>
 
                 <input
                     class="detail"
                     value="${escapeHTML(note.detail)}"
                 >
+
             </div>
 
+
             <div>
+
                 <label>GEAR</label>
 
                 <input
                     class="gear"
                     value="${escapeHTML(note.gear)}"
                 >
+
             </div>
 
         </div>
@@ -979,48 +1256,68 @@ function createNoteCard(
         <div class="noteBottom">
 
             <div>
+
                 <label>ENABLED</label>
 
                 <select class="enabled">
 
                     <option
                         value="true"
-                        ${note.enabled ? "selected" : ""}
+                        ${
+                            note.enabled
+                                ? "selected"
+                                : ""
+                        }
                     >
                         ON
                     </option>
 
                     <option
                         value="false"
-                        ${!note.enabled ? "selected" : ""}
+                        ${
+                            !note.enabled
+                                ? "selected"
+                                : ""
+                        }
                     >
                         OFF
                     </option>
 
                 </select>
+
             </div>
 
 
             <div>
+
                 <label>VOICE</label>
 
                 <select class="voice">
 
                     <option
                         value="true"
-                        ${note.voice ? "selected" : ""}
+                        ${
+                            note.voice
+                                ? "selected"
+                                : ""
+                        }
                     >
                         ON
                     </option>
 
                     <option
                         value="false"
-                        ${!note.voice ? "selected" : ""}
+                        ${
+                            !note.voice
+                                ? "selected"
+                                : ""
+                        }
                     >
                         OFF
                     </option>
 
                 </select>
+
             </div>
 
         </div>
@@ -1051,84 +1348,97 @@ function createNoteCard(
             );
 
 
-    get(".save")
-        .addEventListener(
-            "click",
-            () => {
+    get(".save").addEventListener(
+        "click",
+        () => {
 
-                note.corner =
-                    get(".corner").value;
+            note.corner =
+                get(".corner").value;
 
-                note.time =
-                    Number(
-                        get(".time").value
-                    ) || 0;
+            note.time =
+                Number(
+                    get(".time").value
+                ) || 0;
 
-                note.type =
-                    get(".type").value;
+            note.type =
+                get(".type").value;
 
-                note.call =
-                    get(".call").value;
+            note.call =
+                get(".call").value;
 
-                note.detail =
-                    get(".detail").value;
+            note.detail =
+                get(".detail").value;
 
-                note.gear =
-                    get(".gear").value;
+            note.gear =
+                get(".gear").value;
 
-                note.enabled =
-                    get(".enabled").value ===
-                    "true";
+            note.enabled =
+                get(".enabled").value ===
+                "true";
 
-                note.voice =
-                    get(".voice").value ===
-                    "true";
+            note.voice =
+                get(".voice").value ===
+                "true";
 
-                saveDatabase();
 
-                renderNotes();
+            saveDatabase();
+
+            renderNotes();
+
+
+            engineerCall(
+                "CALL SAVED",
+                note.corner +
+                " — " +
+                note.call,
+                false
+            );
+        }
+    );
+
+
+    get(".test").addEventListener(
+        "click",
+        () => {
+
+            if (!audioEnabled) {
 
                 engineerCall(
-                    "CALL SAVED",
-                    note.corner +
-                    " — " +
-                    note.call
+                    "ENABLE AUDIO FIRST",
+                    "Press Enable Engineer Audio.",
+                    false
                 );
+
+                return;
             }
-        );
 
 
-    get(".test")
-        .addEventListener(
-            "click",
-            () => {
+            engineerCall(
+                note.call,
+                note.detail,
+                true
+            );
+        }
+    );
 
-                engineerCall(
-                    note.call,
-                    note.detail,
-                    true
+
+    get(".deleteNote").addEventListener(
+        "click",
+        () => {
+
+            track.notes =
+                track.notes.filter(
+                    item =>
+                        item.id !==
+                        note.id
                 );
-            }
-        );
 
 
-    get(".deleteNote")
-        .addEventListener(
-            "click",
-            () => {
+            saveDatabase();
 
-                track.notes =
-                    track.notes.filter(
-                        item =>
-                            item.id !==
-                            note.id
-                    );
-
-                saveDatabase();
-
-                renderNotes();
-            }
-        );
+            renderNotes();
+        }
+    );
 
 
     notesList.appendChild(
@@ -1138,65 +1448,75 @@ function createNoteCard(
 
 
 // =====================================================
-// ADD CALL
+// ADD NOTE
 // =====================================================
 
-addNoteBtn.addEventListener(
-    "click",
-    () => {
+if (addNoteBtn) {
 
-        const track =
-            database[
-                trackSelect.value
-            ];
+    addNoteBtn.addEventListener(
+        "click",
+        () => {
+
+            const track =
+                database[
+                    trackSelect.value
+                ];
 
 
-        if (!track) {
-            return;
+            if (!track) {
+                return;
+            }
+
+
+            if (!Array.isArray(track.notes)) {
+                track.notes = [];
+            }
+
+
+            track.notes.push({
+
+                id:
+                    Date.now().toString(),
+
+                corner:
+                    "T1",
+
+                type:
+                    "CUSTOM",
+
+                time:
+                    10,
+
+                call:
+                    "CUSTOM CALL",
+
+                detail:
+                    "Your note",
+
+                gear:
+                    "3",
+
+                enabled:
+                    true,
+
+                voice:
+                    true
+            });
+
+
+            saveDatabase();
+
+
+            activeFilter =
+                "all";
+
+
+            updateFilterButtons();
+
+            renderNotes();
         }
-
-
-        track.notes.push({
-
-            id:
-                Date.now().toString(),
-
-            corner:
-                "T1",
-
-            type:
-                "CUSTOM",
-
-            time:
-                10,
-
-            call:
-                "CUSTOM CALL",
-
-            detail:
-                "Your note",
-
-            gear:
-                "3",
-
-            enabled:
-                true,
-
-            voice:
-                true
-        });
-
-
-        saveDatabase();
-
-        activeFilter =
-            "all";
-
-        updateFilterButtons();
-
-        renderNotes();
-    }
-);
+    );
+}
 
 
 // =====================================================
@@ -1245,53 +1565,40 @@ function updateFilterButtons() {
 // TRACK CHANGE
 // =====================================================
 
-trackSelect.addEventListener(
-    "change",
-    () => {
+if (trackSelect) {
 
-        if (running) {
-            return;
+    trackSelect.addEventListener(
+        "change",
+        () => {
+
+            if (running) {
+                return;
+            }
+
+
+            activeFilter =
+                "all";
+
+
+            updateFilterButtons();
+
+            renderNotes();
+
+
+            const track =
+                database[
+                    trackSelect.value
+                ];
+
+
+            engineerCall(
+                track.name,
+                "Track selected. Push lap ready.",
+                false
+            );
         }
-
-
-        activeFilter =
-            "all";
-
-        updateFilterButtons();
-
-        renderNotes();
-
-
-        const track =
-            database[
-                trackSelect.value
-            ];
-
-
-        engineerCall(
-            track.name,
-            "Track selected. Push lap ready."
-        );
-    }
-);
-
-
-// =====================================================
-// TIMING MODE
-// =====================================================
-
-timingMode.addEventListener(
-    "change",
-    () => {
-
-        engineerCall(
-            "TIMING MODE",
-            timingMode.options[
-                timingMode.selectedIndex
-            ].text
-        );
-    }
-);
+    );
+}
 
 
 // =====================================================
@@ -1302,7 +1609,9 @@ timingMode.addEventListener(
     minutesEl,
     secondsEl,
     millisecondsEl
-].forEach(
+]
+.filter(Boolean)
+.forEach(
     input => {
 
         input.addEventListener(
@@ -1316,7 +1625,8 @@ timingMode.addEventListener(
                         "Target " +
                         formatTime(
                             getTargetTime()
-                        )
+                        ),
+                        false
                     );
                 }
             }
@@ -1326,38 +1636,157 @@ timingMode.addEventListener(
 
 
 // =====================================================
+// TIMING MODE
+// =====================================================
+
+if (timingMode) {
+
+    timingMode.addEventListener(
+        "change",
+        () => {
+
+            engineerCall(
+                "TIMING MODE",
+                timingMode.options[
+                    timingMode.selectedIndex
+                ].text,
+                false
+            );
+        }
+    );
+}
+
+
+// =====================================================
+// BUTTONS
+// =====================================================
+
+if (startBtn) {
+
+    startBtn.addEventListener(
+        "click",
+        startLap
+    );
+}
+
+
+if (pauseBtn) {
+
+    pauseBtn.addEventListener(
+        "click",
+        togglePause
+    );
+}
+
+
+if (stopBtn) {
+
+    stopBtn.addEventListener(
+        "click",
+        stopLap
+    );
+}
+
+
+if (speakBtn) {
+
+    speakBtn.addEventListener(
+        "click",
+        () => {
+
+            if (!audioEnabled) {
+
+                engineerCall(
+                    "ENABLE AUDIO FIRST",
+                    "Press Enable Engineer Audio.",
+                    false
+                );
+
+                return;
+            }
+
+
+            engineerCall(
+                "ENGINEER TEST",
+                "Audio system is working.",
+                true
+            );
+        }
+    );
+}
+
+
+// =====================================================
 // HTML ESCAPE
 // =====================================================
 
 function escapeHTML(value) {
 
     return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;");
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
+        .replaceAll(
+            '"',
+            "&quot;"
+        );
 }
+
+
+// =====================================================
+// GLOBAL FUNCTIONS
+// =====================================================
+
+window.startLap =
+    startLap;
+
+window.togglePause =
+    togglePause;
+
+window.stopLap =
+    stopLap;
+
+window.enableEngineerAudio =
+    enableEngineerAudio;
 
 
 // =====================================================
 // STARTUP
 // =====================================================
 
-populateTracks();
+try {
 
-renderNotes();
+    populateTracks();
 
-engineerCall(
-    "PUSH LAP READY",
-    "Select your track and target time."
-);
+    renderNotes();
 
-pauseBtn.disabled = true;
+    if (pauseBtn) {
+        pauseBtn.disabled = true;
+    }
 
-console.log(
-    "Racing Engineer V4.3 loaded successfully."
-);
+    engineerCall(
+        "PUSH LAP READY",
+        "Enable audio, select a track and set your target.",
+        false
+    );
 
-window.startLap = startLap;
-window.togglePause = togglePause;
-window.stopLap = stopLap;
+    console.log(
+        "Racing Engineer V4.4 loaded."
+    );
+
+} catch (error) {
+
+    console.error(
+        "Startup error:",
+        error
+    );
+}

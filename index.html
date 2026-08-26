@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Racing Engineer V4.2</title>
+    <title>Racing Engineer V4.3</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -11,8 +11,8 @@
 
 <header>
     <div>
-        <h1>RACING ENGINEER <span>V4.2</span></h1>
-        <p>Custom Push-Lap Engineer</p>
+        <h1>RACING ENGINEER <span>V4.3</span></h1>
+        <p>Push Lap Race Engineer</p>
     </div>
 
     <div id="status" class="status">READY</div>
@@ -20,37 +20,12 @@
 
 <main>
 
-    <!-- TRACK + TARGET -->
     <section class="panel controls">
 
         <div class="control">
             <label>TRACK</label>
 
-            <select id="trackSelect">
-                <option value="spa">Spa-Francorchamps</option>
-                <option value="bahrain">Bahrain</option>
-                <option value="jeddah">Jeddah</option>
-                <option value="australia">Australia</option>
-                <option value="japan">Japan</option>
-                <option value="miami">Miami</option>
-                <option value="imola">Imola</option>
-                <option value="monaco">Monaco</option>
-                <option value="canada">Canada</option>
-                <option value="austria">Austria</option>
-                <option value="britain">Great Britain</option>
-                <option value="hungary">Hungary</option>
-                <option value="belgium">Belgium</option>
-                <option value="netherlands">Netherlands</option>
-                <option value="italy">Italy</option>
-                <option value="azerbaijan">Azerbaijan</option>
-                <option value="singapore">Singapore</option>
-                <option value="usa">United States</option>
-                <option value="mexico">Mexico</option>
-                <option value="brazil">Brazil</option>
-                <option value="lasvegas">Las Vegas</option>
-                <option value="qatar">Qatar</option>
-                <option value="abudhabi">Abu Dhabi</option>
-            </select>
+            <select id="trackSelect"></select>
         </div>
 
         <div class="control">
@@ -63,12 +38,12 @@
                 <span>.</span>
                 <input id="milliseconds" type="number" min="0" max="999" value="0">
             </div>
+
         </div>
 
     </section>
 
 
-    <!-- DASHBOARD -->
     <section class="dashboard">
 
         <div class="metric panel">
@@ -89,7 +64,6 @@
     </section>
 
 
-    <!-- ENGINEER -->
     <section class="panel engineer">
 
         <div class="engineerHeader">
@@ -100,13 +74,12 @@
         <div id="call">PUSH LAP READY</div>
 
         <div id="subCall">
-            Configure your notes below.
+            Select a track and start your lap.
         </div>
 
     </section>
 
 
-    <!-- BUTTONS -->
     <section class="buttons">
 
         <button id="startBtn" class="primary">
@@ -128,27 +101,33 @@
     </section>
 
 
-    <!-- NOTE EDITOR -->
+    <!-- TRACK EDITOR -->
+
     <section class="panel editor">
 
         <div class="sectionTitle">
+
             <div>
-                <h2>ENGINEER NOTES</h2>
-                <p>Configure exactly when each call plays.</p>
+                <h2>TRACK ENGINEER</h2>
+
+                <p>
+                    Configure every call on the selected circuit.
+                </p>
             </div>
 
             <button id="addNoteBtn" class="primary small">
-                + ADD NOTE
+                + ADD CALL
             </button>
+
         </div>
 
 
-        <div class="noteControls">
+        <div class="editorControls">
 
             <div>
-                <label>EDITING TRACK</label>
+                <label>TRACK</label>
                 <strong id="editingTrack">
-                    Spa-Francorchamps
+                    -
                 </strong>
             </div>
 
@@ -156,6 +135,7 @@
                 <label>TIMING MODE</label>
 
                 <select id="timingMode">
+
                     <option value="absolute">
                         Absolute Time
                     </option>
@@ -163,8 +143,51 @@
                     <option value="percentage">
                         Lap Percentage
                     </option>
+
                 </select>
+
             </div>
+
+        </div>
+
+
+        <div class="filterRow">
+
+            <button
+                class="filter active"
+                data-filter="all">
+                ALL
+            </button>
+
+            <button
+                class="filter"
+                data-filter="BRAKE">
+                BRAKE
+            </button>
+
+            <button
+                class="filter"
+                data-filter="TURN">
+                TURN
+            </button>
+
+            <button
+                class="filter"
+                data-filter="APEX">
+                APEX
+            </button>
+
+            <button
+                class="filter"
+                data-filter="EXIT">
+                EXIT
+            </button>
+
+            <button
+                class="filter"
+                data-filter="CUSTOM">
+                CUSTOM
+            </button>
 
         </div>
 
@@ -174,27 +197,33 @@
     </section>
 
 
-    <!-- TIME LOG -->
+    <!-- LAP LOG -->
+
     <section class="panel logPanel">
 
         <div class="sectionTitle">
+
             <h2>TIME LOG</h2>
 
             <button id="clearLog">
                 CLEAR
             </button>
+
         </div>
 
         <div id="timeLog">
+
             <div class="empty">
                 No completed laps.
             </div>
+
         </div>
 
     </section>
 
 </main>
 
+<script src="tracks.js"></script>
 <script src="script.js"></script>
 
 </body>

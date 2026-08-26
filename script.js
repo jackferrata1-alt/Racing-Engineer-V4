@@ -105,6 +105,8 @@ function loadDatabase() {
 
 let database = loadDatabase();
 
+window.database = database;
+
 
 function saveDatabase() {
 

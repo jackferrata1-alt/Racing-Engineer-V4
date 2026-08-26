@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Racing Engineer V4.3</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Racing Engineer V5</title>
+    <link rel="stylesheet" href="./style.css">
 </head>
 
 <body>
 
 <header>
     <div>
-        <h1>RACING ENGINEER <span>V4.3</span></h1>
+        <h1>RACING ENGINEER <span>V5</span></h1>
         <p>Push Lap Race Engineer</p>
     </div>
 
@@ -24,7 +24,6 @@
 
         <div class="control">
             <label>TRACK</label>
-
             <select id="trackSelect"></select>
         </div>
 
@@ -38,7 +37,6 @@
                 <span>.</span>
                 <input id="milliseconds" type="number" min="0" max="999" value="0">
             </div>
-
         </div>
 
     </section>
@@ -82,32 +80,28 @@
 
     <section class="buttons">
 
-    <button
-        id="startBtn"
-        class="primary"
-        START PUSH LAP
-    </button>
+        <button id="startBtn" class="primary">
+            START PUSH LAP
+        </button>
 
-    <button id="pauseBtn" disabled>
-        PAUSE
-    </button>
+        <button id="pauseBtn" disabled>
+            PAUSE
+        </button>
 
-    <button id="stopBtn">
-        STOP
-    </button>
+        <button id="stopBtn">
+            STOP
+        </button>
 
-    <button id="speakBtn">
-        TEST ENGINEER
-    </button>
+        <button id="speakBtn">
+            TEST ENGINEER
+        </button>
 
-    <button id="enableAudioBtn">
-        ENABLE ENGINEER AUDIO
-    </button>
+        <button id="enableAudioBtn" class="primary">
+            ENABLE ENGINEER AUDIO
+        </button>
 
     </section>
 
-
-    <!-- TRACK EDITOR -->
 
     <section class="panel editor">
 
@@ -115,10 +109,7 @@
 
             <div>
                 <h2>TRACK ENGINEER</h2>
-
-                <p>
-                    Configure every call on the selected circuit.
-                </p>
+                <p>Configure every call on the selected circuit.</p>
             </div>
 
             <button id="addNoteBtn" class="primary small">
@@ -132,9 +123,7 @@
 
             <div>
                 <label>TRACK</label>
-                <strong id="editingTrack">
-                    -
-                </strong>
+                <strong id="editingTrack">-</strong>
             </div>
 
             <div>
@@ -151,7 +140,6 @@
                     </option>
 
                 </select>
-
             </div>
 
         </div>
@@ -159,39 +147,27 @@
 
         <div class="filterRow">
 
-            <button
-                class="filter active"
-                data-filter="all">
+            <button class="filter active" data-filter="all">
                 ALL
             </button>
 
-            <button
-                class="filter"
-                data-filter="BRAKE">
+            <button class="filter" data-filter="BRAKE">
                 BRAKE
             </button>
 
-            <button
-                class="filter"
-                data-filter="TURN">
+            <button class="filter" data-filter="TURN">
                 TURN
             </button>
 
-            <button
-                class="filter"
-                data-filter="APEX">
+            <button class="filter" data-filter="APEX">
                 APEX
             </button>
 
-            <button
-                class="filter"
-                data-filter="EXIT">
+            <button class="filter" data-filter="EXIT">
                 EXIT
             </button>
 
-            <button
-                class="filter"
-                data-filter="CUSTOM">
+            <button class="filter" data-filter="CUSTOM">
                 CUSTOM
             </button>
 
@@ -202,8 +178,6 @@
 
     </section>
 
-
-    <!-- LAP LOG -->
 
     <section class="panel logPanel">
 
@@ -229,7 +203,9 @@
 
 </main>
 
-alert("SCRIPT.JS IS WORKING");
+
+<script src="./tracks.js"></script>
+<script src="./script.js"></script>
 
 </body>
 </html>
